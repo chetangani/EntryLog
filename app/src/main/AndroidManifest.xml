@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="in.entrylog.entrylog">
+
+    <!-- Internet Permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Network State Permissions -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
+    <!-- Accessing camera hardware -->
+    <uses-feature android:name="android.hardware.camera" />
+
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_INTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+
+    <application
+        android:allowBackup="true"
+        android:clearTaskOnLaunch="true"
+        android:icon="@mipmap/ic_entrylog_icon"
+        android:label="@string/app_name"
+        android:stateNotNeeded="true"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity
+            android:name=".main.MainActivity"
+            android:excludeFromRecents="true"
+            android:screenOrientation="nosensor"
+            android:theme="@style/MyTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <!-- The following two intent-filters are the key to set homescreen -->
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".main.BlocksActivity"
+            android:icon="@mipmap/ic_entrylog_icon" />
+        <activity
+            android:name=".main.el101_102.AddVisitors_EL101"
+            android:icon="@mipmap/ic_entrylog_icon" />
+        <activity android:name=".main.CheckoutVisitors" />
+        <activity android:name=".main.Visitors" />
+
+        <service android:name=".myprinter.WorkService" />
+        <service android:name=".main.services.Updatedata" />
+        <service android:name=".main.services.FieldsService" />
+        <service android:name=".main.services.StaffService" />
+        <service android:name=".main.services.PrintingService" />
+        <!--<service android:name=".main.services.PermissionService" />-->
+
+        <activity android:name=".main.el101_102.Visitor_Details_EL101" />
+        <activity android:name=".main.Search_Details" />
+
+        <receiver android:name=".main.AlarmReceiver">
+            <intent-filter>
+                <action android:name="in.entrylog.entrylog.main.android.action.broadcast" />
+            </intent-filter>
+        </receiver>
+
+        <activity android:name=".main.Overnightstay_Visitors" />
+        <activity android:name=".main.el201.AddVisitors_EL201" />
+        <activity android:name=".main.bluetooth.AddVisitor_Bluetooth" />
+        <activity android:name=".main.el201.CheckoutVisitors_EL201" />
+        <activity android:name=".main.bluetooth.Visitor_Details_Bluetooth" />
+        <activity android:name=".main.el201.Visitor_Details_EL201"></activity>
+    </application>
+
+</manifest>

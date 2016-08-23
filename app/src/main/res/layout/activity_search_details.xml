@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="in.entrylog.entrylog.main.Search_Details">
+
+    <LinearLayout
+        android:id="@+id/searchcheckdate_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/searchcheckin_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_checkindate_txt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CheckInDate: "
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/tv_checkindate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="New Text"
+                android:textSize="21sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/searchcheckout_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_checkoutdate_txt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CheckOutDate: "
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/tv_checkoutdate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="New Text"
+                android:textSize="21sp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/searchdetails_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="4dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/searchname_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_visitorname_txt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Visitor Name: "
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/tv_visitorname"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="New Text"
+                android:textSize="21sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/searchmobile_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_visitormobile_txt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Visitor Mobile: "
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/tv_visitormobile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="New Text"
+                android:textSize="21sp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/searchdetails2_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="4dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/searchtomeet_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_visitormeet_txt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Visitor ToMeet: "
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/tv_visitormeet"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="New Text"
+                android:textSize="21sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/searchvehicle_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_visitorvehicle_txt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Visitor Vehicle: "
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/tv_visitorvehicle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="New Text"
+                android:textSize="21sp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/searchvisitorsview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/vehicle_layout"
+        android:layout_marginTop="8dp"
+        android:scrollbars="vertical">
+
+    </android.support.v7.widget.RecyclerView>
+
+</LinearLayout>

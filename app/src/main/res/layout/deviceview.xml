@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="10dp"
+    android:orientation="vertical"
+    android:paddingBottom="10dp">
+
+    <RadioGroup
+        android:id="@+id/radiodevices"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp">
+
+        <RadioButton
+            android:id="@+id/bluetooth_radio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Bluetooth Device" />
+
+        <RadioButton
+            android:id="@+id/el101_102_radio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:text="EL 101/102 Device" />
+
+        <RadioButton
+            android:id="@+id/el201_radio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:text="EL 201 Device" />
+    </RadioGroup>
+
+</LinearLayout>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cardview"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:cardCornerRadius="5dp"
+    android:layout_marginLeft="8dp"
+    android:layout_marginRight="8dp"
+    android:layout_marginTop="3dp"
+    android:layout_marginBottom="3dp"
+    android:foreground="?android:selectableItemBackground"
+    android:elevation="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="115dp"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/visitors_card_image"
+            android:layout_width="115dp"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@mipmap/ic_launcher" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="10dp" >
+
+            <TextView
+                android:id="@+id/visitor_card_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Chetan"
+                android:textStyle="bold"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/visitor_card_tomeet"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="cgani87@gmail.com"
+                android:layout_below="@+id/visitor_card_name"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/visitor_card_checkintime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="9972452488"
+                android:layout_marginTop="5dp"
+                android:layout_below="@+id/visitor_card_tomeet"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/visitor_card_checkouttime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:layout_marginTop="5dp"
+                android:layout_below="@+id/visitor_card_checkintime"
+                android:layout_weight="1" />
+
+        </RelativeLayout>
+
+    </LinearLayout>
+
+</android.support.v7.widget.CardView>

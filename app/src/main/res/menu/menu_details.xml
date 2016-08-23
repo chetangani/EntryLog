@@ -1,0 +1,37 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".main.Visitors">
+    <item
+        android:id="@+id/menu_icon"
+        android:title=" "
+        android:icon="@drawable/ic_reorder_white"
+        app:showAsAction="always" >
+        <menu>
+            <item
+                android:id="@+id/menu_checkin"
+                android:title="@string/menu_checkin"
+                app:showAsAction="ifRoom" />
+            <item
+                android:id="@+id/menu_checkout"
+                android:title="@string/menu_checkout"
+                app:showAsAction="ifRoom" />
+            <item
+                android:id="@+id/menu_name"
+                android:title="@string/menu_name"
+                app:showAsAction="ifRoom" />
+            <item
+                android:id="@+id/menu_mobile"
+                android:title="@string/menu_mobile"
+                app:showAsAction="ifRoom" />
+            <item
+                android:id="@+id/menu_tomeet"
+                android:title="@string/menu_tomeet"
+                app:showAsAction="ifRoom" />
+            <item
+                android:id="@+id/menu_vehicle"
+                android:title="@string/menu_vehicle"
+                app:showAsAction="ifRoom" />
+        </menu>
+    </item>
+</menu>
