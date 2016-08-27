@@ -9,7 +9,7 @@
     android:fitsSystemWindows="true"
     tools:context=".main.el101_102.Visitor_Details_EL101">
 
-    <ImageView
+    <com.android.volley.toolbox.NetworkImageView
         android:id="@+id/visitor_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

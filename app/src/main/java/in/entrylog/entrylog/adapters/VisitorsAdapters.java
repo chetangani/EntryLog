@@ -10,11 +10,14 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.android.volley.toolbox.ImageLoader;
+import com.android.volley.toolbox.NetworkImageView;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 
 import in.entrylog.entrylog.R;
+import in.entrylog.entrylog.main.CustomVolleyRequest;
 import in.entrylog.entrylog.main.bluetooth.Visitor_Details_Bluetooth;
 import in.entrylog.entrylog.main.el101_102.Visitor_Details_EL101;
 import in.entrylog.entrylog.main.el201.Visitor_Details_EL201;
@@ -53,7 +56,10 @@ public class VisitorsAdapters extends RecyclerView.Adapter<VisitorsAdapters.Visi
     @Override
     public void onBindViewHolder(VisitorsViewHolder holder, int position) {
         DetailsValue details = arrayList.get(position);
-        Picasso.with(context).load(details.getVisitors_Photo()).error(R.drawable.blankperson).into(holder.Visitor_Image);
+        /*Picasso.with(context).load(details.getVisitors_Photo()).into(holder.Visitor_Image);*/
+        holder.imageLoader.get(details.getVisitors_Photo(), ImageLoader.getImageListener(holder.Visitor_Image,
+                R.drawable.blankperson, R.drawable.blankperson));
+        holder.Visitor_Image.setImageUrl(details.getVisitors_Photo(), holder.imageLoader);
         holder.tv_visitor_name.setText(details.getVisitors_Name());
         holder.tv_visitor_tomeet.setText(details.getVisitors_tomeet());
         holder.tv_visitor_checkintime.setText(functionCalls.Convertdate(details.getVisitors_CheckInTime()));
@@ -73,13 +79,15 @@ public class VisitorsAdapters extends RecyclerView.Adapter<VisitorsAdapters.Visi
     }
 
     public class VisitorsViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-        ImageView Visitor_Image;
+        NetworkImageView Visitor_Image;
+        ImageLoader imageLoader;
         TextView tv_visitor_name, tv_visitor_tomeet, tv_visitor_checkintime, tv_visitor_checkouttime;
 
         public VisitorsViewHolder(View itemView) {
             super(itemView);
             itemView.setOnClickListener(this);
-            Visitor_Image = (ImageView) itemView.findViewById(R.id.visitors_card_image);
+            Visitor_Image = (NetworkImageView) itemView.findViewById(R.id.visitors_card_image);
+            imageLoader = CustomVolleyRequest.getInstance(context).getImageLoader();
             tv_visitor_name = (TextView) itemView.findViewById(R.id.visitor_card_name);
             tv_visitor_tomeet = (TextView) itemView.findViewById(R.id.visitor_card_tomeet);
             tv_visitor_checkintime = (TextView) itemView.findViewById(R.id.visitor_card_checkintime);

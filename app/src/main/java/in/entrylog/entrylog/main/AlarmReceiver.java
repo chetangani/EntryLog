@@ -23,7 +23,7 @@ public class AlarmReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         /*createdialog(context);*/
-        settings = context.getSharedPreferences(PREFS_NAME, context.MODE_PRIVATE);
+        /*settings = context.getSharedPreferences(PREFS_NAME, context.MODE_PRIVATE);
         Intent in = new Intent(context, Overnightstay_Visitors.class);
         in.putExtra("VIEW", "OverNightStay");
         PendingIntent pi = PendingIntent.getActivity(context, 0, in, 0);
@@ -42,28 +42,9 @@ public class AlarmReceiver extends BroadcastReceiver {
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         //to post your notification to the notification bar with a id. If a notification with same id already exists, it will get replaced with updated information.
-        notificationManager.notify(0, builder.build());
-    }
-
-    private void createdialog(final Context context) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("Over Night Stay Visitors");
-        builder.setMessage("You have visitors who did not checkout in cut off time");
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                Intent in = new Intent(context, Overnightstay_Visitors.class);
-                in.putExtra("VIEW", "OverNightStay");
-                context.startActivity(in);
-            }
-        });
-        builder.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-
-            }
-        });
-        AlertDialog alert1 = builder.create();
-        alert1.show();
+        notificationManager.notify(0, builder.build());*/
+        Intent i=new Intent(context.getApplicationContext(),Overnightstay_Visitors.class);
+        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(i);
     }
 }

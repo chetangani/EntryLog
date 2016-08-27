@@ -22,6 +22,7 @@ import com.google.zxing.Result;
 import java.io.UnsupportedEncodingException;
 
 import in.entrylog.entrylog.dataposting.ConnectingTask;
+import in.entrylog.entrylog.dataposting.ConnectingTask.VisitorsCheckOut;
 import in.entrylog.entrylog.values.DetailsValue;
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
 
@@ -90,7 +91,8 @@ public class CheckoutVisitors_EL201 extends AppCompatActivity implements ZXingSc
     @Override
     public void handleResult(final Result result) {
         // show the scanner result into dialog box.
-        showdialog(result.getText().toString());
+        /*showdialog(result.getText().toString());*/
+        checkingout(result.getText().toString());
         /*AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Scan Result");
         builder.setMessage(result.getText().toString());
@@ -135,7 +137,8 @@ public class CheckoutVisitors_EL201 extends AppCompatActivity implements ZXingSc
         if (ndefRecords != null && ndefRecords.length > 0) {
             NdefRecord ndefRecord = ndefRecords[0];
             String tagcontent = getTextfromNdefRecord(ndefRecord);
-            showdialog(tagcontent);
+            /*showdialog(tagcontent);*/
+            checkingout(tagcontent);
         } else {
             Toast.makeText(CheckoutVisitors_EL201.this, "No Ndef Records Found", Toast.LENGTH_SHORT).show();
         }
@@ -216,6 +219,14 @@ public class CheckoutVisitors_EL201 extends AppCompatActivity implements ZXingSc
         startActivity(intent);
     }
 
+    @Override
+    protected void onDestroy() {
+        if (mythread.isAlive()) {
+            mythread.interrupt();
+        }
+        super.onDestroy();
+    }
+
     private void createdialog(String Message, String Checkout) {
         AlertDialog.Builder builder = new AlertDialog.Builder(CheckoutVisitors_EL201.this);
         builder.setTitle("CheckOut Result");
@@ -253,7 +264,7 @@ public class CheckoutVisitors_EL201 extends AppCompatActivity implements ZXingSc
         builder.setPositiveButton("CHECK OUT", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                ConnectingTask.VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
+                VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
                         OrganizationID, SecurityID);
                 checkOut.execute();
                 checkoutdialog = ProgressDialog.show(CheckoutVisitors_EL201.this, "", "Checking Out...", true);
@@ -270,5 +281,16 @@ public class CheckoutVisitors_EL201 extends AppCompatActivity implements ZXingSc
         });
         AlertDialog alert1 = builder.create();
         alert1.show();
+    }
+
+    private void checkingout(String result) {
+        VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
+                OrganizationID, SecurityID);
+        checkOut.execute();
+        checkoutdialog = ProgressDialog.show(CheckoutVisitors_EL201.this, "", "Checking Out...", true);
+        mythread = null;
+        Runnable runnable = new DisplayTimer();
+        mythread = new Thread(runnable);
+        mythread.start();
     }
 }

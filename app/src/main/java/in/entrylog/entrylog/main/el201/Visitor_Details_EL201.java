@@ -26,6 +26,8 @@ import android.widget.Toast;
 
 import com.POSD.controllers.PrinterController;
 import com.POSD.util.MachineVersion;
+import com.android.volley.toolbox.ImageLoader;
+import com.android.volley.toolbox.NetworkImageView;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
@@ -45,6 +47,8 @@ import java.util.Scanner;
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
 import in.entrylog.entrylog.dataposting.ConnectingTask.VisitorManualCheckout;
+import in.entrylog.entrylog.main.CustomVolleyRequest;
+import in.entrylog.entrylog.main.services.FieldsService;
 import in.entrylog.entrylog.main.services.PrintingService;
 import in.entrylog.entrylog.util.ImageProcessing;
 import in.entrylog.entrylog.values.DataPrinting;
@@ -55,7 +59,9 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
     public static final String PREFS_NAME = "MyPrefsFile";
     private static final int END_DLG = 6;
     private PrinterController printerController = null;
-    LinearLayout maincontent, checkoutlayout, checkoutuserlayout;
+    LinearLayout maincontent, checkoutlayout, checkoutuserlayout, emailayout, designationlayout, departmentlayout,
+            purposelayout, housenolayout, flatnolayout, blocklayout, noofvisitorlayout, classlayout, sectionlayout,
+            studentnamelayout, idcardlayout;
     CoordinatorLayout coordinatorLayout;
     CollapsingToolbarLayout collapsingToolbarLayout;
     String Visitor_Name, Visitor_Mobile, Visitor_Fromaddress, Visitor_ToMeet, Visitor_CheckinTime, Visitor_CheckoutTime,
@@ -63,8 +69,11 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
             HeaderPath, DataPath, OrganizationPath, OrganizationName, BarCodeValue, CheckinUser="", CheckoutUser="",
             Visitor_Designation, Department, Purpose, House_number, Flat_number, Block, No_Visitor, aClass, Section,
             Student_Name, ID_Card, Email, VehicleNo, BuildManu;
-    ImageView Visitor_image;
-    TextView tv_name, tv_mobile, tv_address, tv_tomeet, tv_checkintime, tv_checkouttime, tv_vehicleno, tv_entry, tv_exit;
+    NetworkImageView Visitor_image;
+    ImageLoader imageLoader;
+    TextView tv_name, tv_mobile, tv_address, tv_tomeet, tv_checkintime, tv_checkouttime, tv_vehicleno, tv_entry, tv_exit,
+            tv_email, tv_designation, tv_department, tv_purpose, tv_houseno, tv_flatno, tv_block, tv_noofvisitor, tv_class,
+            tv_section, tv_studentname, tv_idcardno;
     Button Checkout_btn, Print_btn;
     ConnectingTask task;
     DetailsValue detailsValue;
@@ -76,6 +85,7 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
     DataPrinting dataPrinting;
     boolean imageprinting = false, barcodeprinting = false;
     PrintingService printingService;
+    FieldsService fieldsService;
     static ArrayList<String> printingorder, printingdisplay;
 
     @Override
@@ -111,6 +121,7 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
         functionCalls = new FunctionCalls();
         dataPrinting = new DataPrinting();
 
+        fieldsService = new FieldsService();
         printingService = new PrintingService();
 
         functionCalls.OrientationView(Visitor_Details_EL201.this);
@@ -123,6 +134,7 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
 
         Intent intent = getIntent();
         Bundle bnd = intent.getExtras();
+        //region Intent Values
         ContextView = bnd.getString("View");
         Visitor_Photo = bnd.getString("Image");
         Organization_ID = bnd.getString("OrganizationID");
@@ -155,10 +167,26 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
         Section = bnd.getString("section");
         Student_Name = bnd.getString("student_name");
         ID_Card = bnd.getString("id_card_number");
+        //endregion
 
+        //region Linear Layout Initialization
         checkoutlayout = (LinearLayout) findViewById(R.id.detailscheckoutdatelayout);
         checkoutuserlayout = (LinearLayout) findViewById(R.id.exitgate_layout);
+        emailayout = (LinearLayout) findViewById(R.id.detailsemaillayout);
+        designationlayout = (LinearLayout) findViewById(R.id.detailsvisitordesignation_layout);
+        departmentlayout = (LinearLayout) findViewById(R.id.detailsdepartmentlayout);
+        purposelayout = (LinearLayout) findViewById(R.id.detailspurposelayout);
+        housenolayout = (LinearLayout) findViewById(R.id.detailshousenolayout);
+        flatnolayout = (LinearLayout) findViewById(R.id.detailsflatnolayout);
+        blocklayout = (LinearLayout) findViewById(R.id.detailsblocklayout);
+        noofvisitorlayout = (LinearLayout) findViewById(R.id.detailsnoofvisitorlayout);
+        classlayout = (LinearLayout) findViewById(R.id.detailsclasslayout);
+        sectionlayout = (LinearLayout) findViewById(R.id.detailssectionlayout);
+        studentnamelayout = (LinearLayout) findViewById(R.id.detailsstudentnamelayout);
+        idcardlayout = (LinearLayout) findViewById(R.id.detailsidcardnolayout);
+        //endregion
 
+        //region TextView Initialization
         tv_name = (TextView) findViewById(R.id.visitor_name);
         tv_mobile = (TextView) findViewById(R.id.visitor_mobile);
         tv_address = (TextView) findViewById(R.id.visitor_fromaddress);
@@ -168,11 +196,25 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
         tv_vehicleno = (TextView) findViewById(R.id.visitor_vehicleno);
         tv_entry = (TextView) findViewById(R.id.entry_gate);
         tv_exit = (TextView) findViewById(R.id.exit_gate);
+        tv_email = (TextView) findViewById(R.id.visitor_email);
+        tv_designation = (TextView) findViewById(R.id.visitor_designation);
+        tv_department = (TextView) findViewById(R.id.visitor_department);
+        tv_purpose = (TextView) findViewById(R.id.visitor_purpose);
+        tv_houseno = (TextView) findViewById(R.id.visitor_houseno);
+        tv_flatno = (TextView) findViewById(R.id.visitor_flatno);
+        tv_block = (TextView) findViewById(R.id.visitor_block);
+        tv_noofvisitor = (TextView) findViewById(R.id.noofvisitor);
+        tv_class = (TextView) findViewById(R.id.visitor_class);
+        tv_section = (TextView) findViewById(R.id.visitor_section);
+        tv_studentname = (TextView) findViewById(R.id.visitor_section);
+        tv_idcardno = (TextView) findViewById(R.id.visitor_idcardno);
+        //endregion
 
         Checkout_btn = (Button) findViewById(R.id.checkout_btn);
         Print_btn = (Button) findViewById(R.id.detailsprint_btn);
 
-        Visitor_image = (ImageView) findViewById(R.id.visitor_image);
+        Visitor_image = (NetworkImageView) findViewById(R.id.visitor_image);
+        imageLoader = CustomVolleyRequest.getInstance(this.getApplicationContext()).getImageLoader();
 
         BuildManu = Build.MANUFACTURER;
 
@@ -220,7 +262,10 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
         } else {
         }
 
-        Picasso.with(Visitor_Details_EL201.this).load(Visitor_Photo).error(R.drawable.blankperson).into(Visitor_image);
+        /*Picasso.with(Visitor_Details_Bluetooth.this).load(Visitor_Photo).error(R.drawable.blankperson).into(Visitor_image);*/
+        imageLoader.get(Visitor_Photo, ImageLoader.getImageListener(Visitor_image, R.drawable.blankperson,
+                R.drawable.blankperson));
+        Visitor_image.setImageUrl(Visitor_Photo, imageLoader);
         tv_name.setText(Visitor_Name);
         tv_mobile.setText(Visitor_Mobile);
         tv_address.setText(Visitor_Fromaddress);
@@ -230,6 +275,7 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
         tv_vehicleno.setText(Visitor_VehicleNo);
         tv_entry.setText(CheckinUser);
         tv_exit.setText(CheckoutUser);
+        DisplayFields();
 
         Checkout_btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -348,6 +394,7 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
                     functionCalls.LogStatus("Print Order: "+PrintOrder);
                     String Display = PrintOrder.substring(2, PrintOrder.length());
                     functionCalls.LogStatus("Display: "+Display);
+                    myOutWriter.append(Display+": ");
                     if (Display.equals("Name")) {
                         myOutWriter.append(Visitor_Name + "\r\n");
                     }
@@ -696,6 +743,67 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
                 AlertDialog endalert = endbuilder.create();
                 endalert.show();
                 break;
+        }
+    }
+
+    private void DisplayFields() {
+        functionCalls.LogStatus("Display field Started");
+        HashSet<String> hashSet = new HashSet<>();
+        hashSet = fieldsService.fieldset;
+        ArrayList<String> arrayList = new ArrayList<>();
+        arrayList.addAll(hashSet);
+        if (arrayList.size() > 0) {
+            for (int i = 0; i < arrayList.size(); i++) {
+                String value = arrayList.get(i).toString();
+                if (value.equals("Email")) {
+                    emailayout.setVisibility(View.VISIBLE);
+                    tv_email.setText(Email);
+                }
+                if (value.equals("Visitor Designation")) {
+                    designationlayout.setVisibility(View.VISIBLE);
+                    tv_designation.setText(Visitor_Designation);
+                }
+                if (value.equals("Department")) {
+                    departmentlayout.setVisibility(View.VISIBLE);
+                    tv_department.setText(Department);
+                }
+                if (value.equals("Purpose")) {
+                    purposelayout.setVisibility(View.VISIBLE);
+                    tv_purpose.setText(Purpose);
+                }
+                if (value.equals("House No")) {
+                    housenolayout.setVisibility(View.VISIBLE);
+                    tv_houseno.setText(House_number);
+                }
+                if (value.equals("Flat No")) {
+                    flatnolayout.setVisibility(View.VISIBLE);
+                    tv_flatno.setText(Flat_number);
+                }
+                if (value.equals("Block")) {
+                    blocklayout.setVisibility(View.VISIBLE);
+                    tv_block.setText(Block);
+                }
+                if (value.equals("No of Visitor")) {
+                    noofvisitorlayout.setVisibility(View.VISIBLE);
+                    tv_noofvisitor.setText(No_Visitor);
+                }
+                if (value.equals("Class")) {
+                    classlayout.setVisibility(View.VISIBLE);
+                    tv_class.setText(aClass);
+                }
+                if (value.equals("Section")) {
+                    sectionlayout.setVisibility(View.VISIBLE);
+                    tv_section.setText(Section);
+                }
+                if (value.equals("Student Name")) {
+                    studentnamelayout.setVisibility(View.VISIBLE);
+                    tv_studentname.setText(Student_Name);
+                }
+                if (value.equals("ID Card No")) {
+                    idcardlayout.setVisibility(View.VISIBLE);
+                    tv_idcardno.setText(ID_Card);
+                }
+            }
         }
     }
 

@@ -104,6 +104,13 @@ public class BlocksActivity extends AppCompatActivity {
         Checkout_btn = (Button) findViewById(R.id.checkout_btn);
         ManualCheckout_btn = (Button) findViewById(R.id.manually_checkout_btn);
 
+        Intent service = new Intent(BlocksActivity.this, FieldsService.class);
+        startService(service);
+        Intent service1 = new Intent(BlocksActivity.this, PrintingService.class);
+        startService(service1);
+        Intent service2 = new Intent(BlocksActivity.this, StaffService.class);
+        startService(service2);
+
         /*imeiFunctionCalls.OrientationView(BlocksActivity.this);
         Log.d("debug", "MANUFACTURER : "+Build.MANUFACTURER
                 +"\nMODEL : "+Build.MODEL
@@ -132,12 +139,6 @@ public class BlocksActivity extends AppCompatActivity {
                             showdialog(DEVICE_DLG);
                         }*/
                     }
-                    Intent service = new Intent(BlocksActivity.this, FieldsService.class);
-                    startService(service);
-                    Intent service1 = new Intent(BlocksActivity.this, PrintingService.class);
-                    startService(service1);
-                    Intent service2 = new Intent(BlocksActivity.this, StaffService.class);
-                    startService(service2);
                 } else {
                     Toast.makeText(BlocksActivity.this, "Please Turn On Internet", Toast.LENGTH_SHORT).show();
                 }
@@ -178,8 +179,6 @@ public class BlocksActivity extends AppCompatActivity {
                         visitorsbtn = true;
                         showdialog(DEVICE_DLG);
                     } else {
-                        Intent intent1 = new Intent(BlocksActivity.this, PrintingService.class);
-                        startService(intent1);
                         visitors(Visitors.class, "Visitors");
                     }
                 } else {
@@ -196,8 +195,6 @@ public class BlocksActivity extends AppCompatActivity {
                         manualcheckoutbtn = true;
                         showdialog(DEVICE_DLG);
                     } else {
-                        Intent intent1 = new Intent(BlocksActivity.this, PrintingService.class);
-                        startService(intent1);
                         visitors(Visitors.class, "Manually Checkout");
                     }
                 } else {
@@ -446,9 +443,6 @@ public class BlocksActivity extends AppCompatActivity {
                         detailsValue.setLoginSuccess(false);
                         logoutthread.interrupt();
                         dialog.dismiss();
-                        MainActivity main = new MainActivity();
-                        context = main.getContext();
-                        main.setLoginsuccess(false);
                         editor.putString("Login", "No");
                         editor.putString("Device", "");
                         editor.commit();
@@ -458,9 +452,9 @@ public class BlocksActivity extends AppCompatActivity {
                         } else {
                             Log.d("debug", "Entrylog Folder not deleted");
                         }
-                        Intent intent = new Intent(BlocksActivity.this, MainActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        startActivity(intent);
+                        Intent logoutIntent = new Intent();
+                        setResult(Activity.RESULT_OK, logoutIntent);
+                        finish();
                     }
                     if (detailsValue.isLoginFailure()) {
                         detailsValue.setLoginFailure(false);
@@ -545,7 +539,7 @@ public class BlocksActivity extends AppCompatActivity {
         Uri path = Uri.fromFile(Apkfile);
         Intent objIntent = new Intent(Intent.ACTION_VIEW);
         objIntent.setDataAndType(path, "application/vnd.android.package-archive");
-        objIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        objIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(objIntent);
     }
 
@@ -589,7 +583,6 @@ public class BlocksActivity extends AppCompatActivity {
             int count = 0;
 
             try {
-                //"http://api.androidhive.info/progressdialog/hive.jpg"
                 URL url = new URL(UpdateApkURL);
                 URLConnection conexion = url.openConnection();
                 conexion.connect();

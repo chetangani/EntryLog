@@ -27,6 +27,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.toolbox.ImageLoader;
+import com.android.volley.toolbox.NetworkImageView;
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
@@ -43,6 +45,8 @@ import java.util.Scanner;
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
 import in.entrylog.entrylog.dataposting.ConnectingTask.VisitorManualCheckout;
+import in.entrylog.entrylog.main.CustomVolleyRequest;
+import in.entrylog.entrylog.main.services.FieldsService;
 import in.entrylog.entrylog.main.services.PrintingService;
 import in.entrylog.entrylog.util.ArrayUtil;
 import in.entrylog.entrylog.util.Encoder;
@@ -140,7 +144,9 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
         }
     };
 
-    LinearLayout maincontent, checkoutlayout, checkoutuserlayout;
+    LinearLayout maincontent, checkoutlayout, checkoutuserlayout, emailayout, designationlayout, departmentlayout,
+            purposelayout, housenolayout, flatnolayout, blocklayout, noofvisitorlayout, classlayout, sectionlayout,
+            studentnamelayout, idcardlayout;
     CoordinatorLayout coordinatorLayout;
     CollapsingToolbarLayout collapsingToolbarLayout;
     String Visitor_Name, Visitor_Mobile, Visitor_Fromaddress, Visitor_ToMeet, Visitor_CheckinTime, Visitor_CheckoutTime,
@@ -148,8 +154,11 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
             HeaderPath, DataPath, OrganizationPath, EmptyPath, OrganizationName, BarCodeValue, CheckinUser="", CheckoutUser="",
             Visitor_Designation, Department, Purpose, House_number, Flat_number, Block, No_Visitor, aClass, Section,
             Student_Name, ID_Card, Email, Vehicleno;
-    ImageView Visitor_image;
-    TextView tv_name, tv_mobile, tv_address, tv_tomeet, tv_checkintime, tv_checkouttime, tv_vehicleno, tv_entry, tv_exit;
+    NetworkImageView Visitor_image;
+    ImageLoader imageLoader;
+    TextView tv_name, tv_mobile, tv_address, tv_tomeet, tv_checkintime, tv_checkouttime, tv_vehicleno, tv_entry, tv_exit,
+            tv_email, tv_designation, tv_department, tv_purpose, tv_houseno, tv_flatno, tv_block, tv_noofvisitor, tv_class,
+            tv_section, tv_studentname, tv_idcardno;
     Button Checkout_btn, Print_btn;
     ConnectingTask task;
     DetailsValue detailsValue;
@@ -160,6 +169,7 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
     boolean imageprinting = false, barcodeprinting = false;
     SharedPreferences settings;
     PrintingService printingService;
+    FieldsService fieldsService;
     static ArrayList<String> printingorder, printingdisplay;
 
     @Override
@@ -193,6 +203,7 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
         functionCalls = new FunctionCalls();
         dataPrinting = new DataPrinting();
 
+        fieldsService = new FieldsService();
         printingService = new PrintingService();
 
         functionCalls.OrientationView(Visitor_Details_EL101.this);
@@ -201,6 +212,7 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
 
         Intent intent = getIntent();
         Bundle bnd = intent.getExtras();
+        //region Intent Values
         ContextView = bnd.getString("View");
         Visitor_Photo = bnd.getString("Image");
         Organization_ID = bnd.getString("OrganizationID");
@@ -233,10 +245,26 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
         Section = bnd.getString("section");
         Student_Name = bnd.getString("student_name");
         ID_Card = bnd.getString("id_card_number");
+        //endregion
 
+        //region Linear Layout Initialization
         checkoutlayout = (LinearLayout) findViewById(R.id.detailscheckoutdatelayout);
         checkoutuserlayout = (LinearLayout) findViewById(R.id.exitgate_layout);
+        emailayout = (LinearLayout) findViewById(R.id.detailsemaillayout);
+        designationlayout = (LinearLayout) findViewById(R.id.detailsvisitordesignation_layout);
+        departmentlayout = (LinearLayout) findViewById(R.id.detailsdepartmentlayout);
+        purposelayout = (LinearLayout) findViewById(R.id.detailspurposelayout);
+        housenolayout = (LinearLayout) findViewById(R.id.detailshousenolayout);
+        flatnolayout = (LinearLayout) findViewById(R.id.detailsflatnolayout);
+        blocklayout = (LinearLayout) findViewById(R.id.detailsblocklayout);
+        noofvisitorlayout = (LinearLayout) findViewById(R.id.detailsnoofvisitorlayout);
+        classlayout = (LinearLayout) findViewById(R.id.detailsclasslayout);
+        sectionlayout = (LinearLayout) findViewById(R.id.detailssectionlayout);
+        studentnamelayout = (LinearLayout) findViewById(R.id.detailsstudentnamelayout);
+        idcardlayout = (LinearLayout) findViewById(R.id.detailsidcardnolayout);
+        //endregion
 
+        //region TextView Initialization
         tv_name = (TextView) findViewById(R.id.visitor_name);
         tv_mobile = (TextView) findViewById(R.id.visitor_mobile);
         tv_address = (TextView) findViewById(R.id.visitor_fromaddress);
@@ -246,11 +274,25 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
         tv_vehicleno = (TextView) findViewById(R.id.visitor_vehicleno);
         tv_entry = (TextView) findViewById(R.id.entry_gate);
         tv_exit = (TextView) findViewById(R.id.exit_gate);
+        tv_email = (TextView) findViewById(R.id.visitor_email);
+        tv_designation = (TextView) findViewById(R.id.visitor_designation);
+        tv_department = (TextView) findViewById(R.id.visitor_department);
+        tv_purpose = (TextView) findViewById(R.id.visitor_purpose);
+        tv_houseno = (TextView) findViewById(R.id.visitor_houseno);
+        tv_flatno = (TextView) findViewById(R.id.visitor_flatno);
+        tv_block = (TextView) findViewById(R.id.visitor_block);
+        tv_noofvisitor = (TextView) findViewById(R.id.noofvisitor);
+        tv_class = (TextView) findViewById(R.id.visitor_class);
+        tv_section = (TextView) findViewById(R.id.visitor_section);
+        tv_studentname = (TextView) findViewById(R.id.visitor_section);
+        tv_idcardno = (TextView) findViewById(R.id.visitor_idcardno);
+        //endregion
 
         Checkout_btn = (Button) findViewById(R.id.checkout_btn);
         Print_btn = (Button) findViewById(R.id.detailsprint_btn);
 
-        Visitor_image = (ImageView) findViewById(R.id.visitor_image);
+        Visitor_image = (NetworkImageView) findViewById(R.id.visitor_image);
+        imageLoader = CustomVolleyRequest.getInstance(this.getApplicationContext()).getImageLoader();
 
         int screenSize = getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK;
         int rotation = this.getWindowManager().getDefaultDisplay().getRotation();
@@ -293,7 +335,10 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
 
         OrganizationName = settings.getString("OrganizationName", "");
 
-        Picasso.with(Visitor_Details_EL101.this).load(Visitor_Photo).error(R.drawable.blankperson).into(Visitor_image);
+        /*Picasso.with(Visitor_Details_Bluetooth.this).load(Visitor_Photo).error(R.drawable.blankperson).into(Visitor_image);*/
+        imageLoader.get(Visitor_Photo, ImageLoader.getImageListener(Visitor_image, R.drawable.blankperson,
+                R.drawable.blankperson));
+        Visitor_image.setImageUrl(Visitor_Photo, imageLoader);
         tv_name.setText(Visitor_Name);
         tv_mobile.setText(Visitor_Mobile);
         tv_address.setText(Visitor_Fromaddress);
@@ -303,6 +348,7 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
         tv_vehicleno.setText(Visitor_VehicleNo);
         tv_entry.setText(CheckinUser);
         tv_exit.setText(CheckoutUser);
+        DisplayFields();
 
         Checkout_btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -461,18 +507,20 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
     private void PrintingData() {
         dialog = ProgressDialog.show(Visitor_Details_EL101.this, "", "Printing Data...", true);
         Log.d("debug", "Saving Text");
-        dataPrinting.SaveOrganization(OrganizationName);
+        /*dataPrinting.SaveOrganization(OrganizationName);
         dataPrinting.SaveHeader();
         SaveData();
-        dataPrinting.SaveEmpty();
+        dataPrinting.SaveEmpty();*/
         Log.d("debug", "Printing Header");
         SendCommad(new byte[]{0x1d, 0x21, 0x01});
         SendCommad(new byte[]{0x1b, 0x61, 0x01});
-        printString(OrganizationPath);
+        /*printString(OrganizationPath);*/
+        printString(OrganizationName/*+"\n"*/);
         SendCommad(new byte[]{0x1d, 0x21, 0x00});
         SendCommad(new byte[]{0x1d, 0x21, 0x00});
         SendCommad(new byte[]{0x1d, 0x21, 0x00});
-        printString(HeaderPath);
+        /*printString(HeaderPath);*/
+        printString("VISITOR"/*+"\n"*/);
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -489,9 +537,10 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
                 if (imageprinting) {
                     imageprinting = false;
                 }
-                printString(EmptyPath);
-                barcodeprinting = true;
+                /*printString(EmptyPath);*/
                 if (settings.getString("Scannertype", "").equals("Barcode")) {
+                    printString("    "+"\n");
+                    barcodeprinting = true;
                     printBarCode(BarCodeValue);
                 } else {
                     printQRcode(195, BarCodeValue);
@@ -504,14 +553,18 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
                 Log.d("debug", "Printing Header");
                 if (barcodeprinting) {
                     barcodeprinting = false;
+                    printString("    "+"\n");
                 }
-                printString(EmptyPath);
+                /*printString(EmptyPath);*/
                 SendCommad(new byte[]{0x1b, 0x61, 0x00});
                 SendCommad(new byte[]{0x1b, 0x61, 0x00});
                 SendCommad(new byte[]{0x1b, 0x61, 0x00});
-                printString(DataPath);
-                printString(EmptyPath);
-                printString(EmptyPath);
+                /*printString(DataPath);*/
+                SaveData();
+                /*printString(EmptyPath);
+                printString(EmptyPath);*/
+                printString("    "+"\n");
+                printString("    "+"\n");
             }
         }, 6000);
         new Handler().postDelayed(new Runnable() {
@@ -528,9 +581,9 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
         String path = functionCalls.filepath("Textfile");
         String filename = "Data.txt";
         try {
-            File f = new File(path + File.separator + filename);
+            /*File f = new File(path + File.separator + filename);
             FileOutputStream fOut = new FileOutputStream(f);
-            OutputStreamWriter myOutWriter = new OutputStreamWriter(fOut);
+            OutputStreamWriter myOutWriter = new OutputStreamWriter(fOut);*/
 
             HashSet<String> Printdisplay = new HashSet<>();
             Printdisplay = printingService.printingset;
@@ -544,6 +597,7 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
                     functionCalls.LogStatus("Print Order: "+PrintOrder);
                     String Display = PrintOrder.substring(2, PrintOrder.length());
                     functionCalls.LogStatus("Display: "+Display);
+                    /*myOutWriter.append(Display+": ");
                     if (Display.equals("Name")) {
                         myOutWriter.append(Visitor_Name + "\r\n");
                     }
@@ -597,24 +651,118 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
                     }
                     if (Display.equals("Email")) {
                         myOutWriter.append(Email + "\r\n");
-                        /*printString(Display+": "+Email+"\n");*/
+                        *//*printString(Display+": "+Email+"\n");*//*
                     }
                     if (Display.equals("Vehicle Number")) {
                         myOutWriter.append(Vehicleno + "\r\n");
-                        /*printString(Display+": "+Vehicleno+"\n");*/
+                        *//*printString(Display+": "+Vehicleno+"\n");*//*
+                    }*/
+                    /*printString(Display+": ");*/
+                    if (Display.equals("Name")) {
+                        /*myOutWriter.append(Visitor_Name + "\r\n");*/
+                        printString(Display+": "+Visitor_Name/*+"\n"*/);
+                    }
+                    if (Display.equals("Mobile")) {
+                        /*myOutWriter.append(Visitor_Mobile + "\r\n");*/
+                        printString(Display+": "+Visitor_Mobile/*+"\n"*/);
+                    }
+                    if (Display.equals("From")) {
+                        /*myOutWriter.append(Visitor_Fromaddress + "\r\n");*/
+                        printString(Display+": "+Visitor_Fromaddress/*+"\n"*/);
+                    }
+                    if (Display.equals("To Meet")) {
+                        /*myOutWriter.append(Visitor_ToMeet + "\r\n");*/
+                        printString(Display+": "+Visitor_ToMeet/*+"\n"*/);
+                    }
+                    if (Display.equals("Date")) {
+                        /*myOutWriter.append(Visitor_CheckinTime);*/
+                        printString(Display+": "+Visitor_CheckinTime/*+"\n"*/);
+                    }
+                    if (Display.equals("Visitor Designation")) {
+                        /*myOutWriter.append(Visitor_Designation + "\r\n");*/
+                        printString(Display+": "+Visitor_Designation/*+"\n"*/);
+                    }
+                    if (Display.equals("Department")) {
+                        /*myOutWriter.append(Department + "\r\n");*/
+                        printString(Display+": "+Department/*+"\n"*/);
+                    }
+                    if (Display.equals("Purpose")) {
+                        /*myOutWriter.append(Purpose + "\r\n");*/
+                        printString(Display+": "+Purpose/*+"\n"*/);
+                    }
+                    if (Display.equals("House No")) {
+                        /*myOutWriter.append(House_number + "\r\n");*/
+                        printString(Display+": "+House_number/*+"\n"*/);
+                    }
+                    if (Display.equals("Flat No")) {
+                        /*myOutWriter.append(Flat_number + "\r\n");*/
+                        printString(Display+": "+Flat_number/*+"\n"*/);
+                    }
+                    if (Display.equals("Block")) {
+                        /*myOutWriter.append(Block + "\r\n");*/
+                        printString(Display+": "+Block/*+"\n"*/);
+                    }
+                    if (Display.equals("No of Visitor")) {
+                        /*myOutWriter.append(No_Visitor + "\r\n");*/
+                        printString(Display+": "+No_Visitor/*+"\n"*/);
+                    }
+                    if (Display.equals("Class")) {
+                        /*myOutWriter.append(aClass + "\r\n");*/
+                        printString(Display+": "+aClass/*+"\n"*/);
+                    }
+                    if (Display.equals("Section")) {
+                        /*myOutWriter.append(Section + "\r\n");*/
+                        printString(Display+": "+Section/*+"\n"*/);
+                    }
+                    if (Display.equals("Student")) {
+                        /*myOutWriter.append(Student_Name + "\r\n");*/
+                        printString(Display+": "+Student_Name/*+"\n"*/);
+                    }
+                    if (Display.equals("Id Card")) {
+                        /*myOutWriter.append(ID_Card + "\r\n");*/
+                        printString(Display+": "+ID_Card/*+"\n"*/);
+                    }
+                    if (Display.equals("Entry")) {
+                        /*myOutWriter.append(CheckinUser + "\r\n");*/
+                        printString(Display+": "+CheckinUser/*+"\n"*/);
+                    }
+                    if (Display.equals("Email")) {
+                        /*myOutWriter.append(Email + "\r\n");*/
+                        printString(Display+": "+Email/*+"\n"*/);
+                    }
+                    if (Display.equals("Vehicle Number")) {
+                        /*myOutWriter.append(Vehicleno + "\r\n");*/
+                        printString(Display+": "+Vehicleno/*+"\n"*/);
                     }
                 }
             }
-            myOutWriter.append(" " + "\r\n");
+            /*myOutWriter.append(" " + "\r\n");
             myOutWriter.close();
-            fOut.close();
+            fOut.close();*/
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public void printString(String str) {
-        String s1 = null;
+        if((str!=null)&&(str.getBytes().length!=0)){
+            byte[] send = null;
+            try {
+                //send = addEnter(str.getBytes("ISO8859-16"));
+                //打印包含中文字符的文字 只能使用GBK2312，其他外语特殊字符用UTF-8 ，测试匈牙利语需要用iso859-16
+                //If want to print Chinese character use "GBK2312", others use "UTF-8";
+                send = addEnter(str.getBytes("GB2312"));
+                //send = str.getBytes("utf-8");
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+            SendCommad(send);
+            //Message msg=Message.obtain();
+            //msg.what=SendCommand;
+            //msg.obj=send;
+            //mHandler.sendMessageDelayed(msg,450);
+        }
+        /*String s1 = null;
         try {
             Log.d("debug", "Send Data Initialzing");
             //Read and Display from text file and print
@@ -641,7 +789,7 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
             e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     public byte[] addEnter(byte[] buf) {
@@ -953,6 +1101,67 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
                 AlertDialog endalert = endbuilder.create();
                 endalert.show();
                 break;
+        }
+    }
+
+    private void DisplayFields() {
+        functionCalls.LogStatus("Display field Started");
+        HashSet<String> hashSet = new HashSet<>();
+        hashSet = fieldsService.fieldset;
+        ArrayList<String> arrayList = new ArrayList<>();
+        arrayList.addAll(hashSet);
+        if (arrayList.size() > 0) {
+            for (int i = 0; i < arrayList.size(); i++) {
+                String value = arrayList.get(i).toString();
+                if (value.equals("Email")) {
+                    emailayout.setVisibility(View.VISIBLE);
+                    tv_email.setText(Email);
+                }
+                if (value.equals("Visitor Designation")) {
+                    designationlayout.setVisibility(View.VISIBLE);
+                    tv_designation.setText(Visitor_Designation);
+                }
+                if (value.equals("Department")) {
+                    departmentlayout.setVisibility(View.VISIBLE);
+                    tv_department.setText(Department);
+                }
+                if (value.equals("Purpose")) {
+                    purposelayout.setVisibility(View.VISIBLE);
+                    tv_purpose.setText(Purpose);
+                }
+                if (value.equals("House No")) {
+                    housenolayout.setVisibility(View.VISIBLE);
+                    tv_houseno.setText(House_number);
+                }
+                if (value.equals("Flat No")) {
+                    flatnolayout.setVisibility(View.VISIBLE);
+                    tv_flatno.setText(Flat_number);
+                }
+                if (value.equals("Block")) {
+                    blocklayout.setVisibility(View.VISIBLE);
+                    tv_block.setText(Block);
+                }
+                if (value.equals("No of Visitor")) {
+                    noofvisitorlayout.setVisibility(View.VISIBLE);
+                    tv_noofvisitor.setText(No_Visitor);
+                }
+                if (value.equals("Class")) {
+                    classlayout.setVisibility(View.VISIBLE);
+                    tv_class.setText(aClass);
+                }
+                if (value.equals("Section")) {
+                    sectionlayout.setVisibility(View.VISIBLE);
+                    tv_section.setText(Section);
+                }
+                if (value.equals("Student Name")) {
+                    studentnamelayout.setVisibility(View.VISIBLE);
+                    tv_studentname.setText(Student_Name);
+                }
+                if (value.equals("ID Card No")) {
+                    idcardlayout.setVisibility(View.VISIBLE);
+                    tv_idcardno.setText(ID_Card);
+                }
+            }
         }
     }
 

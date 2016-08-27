@@ -53,7 +53,7 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
     @Override
     public void handleResult(final Result result) {
         // show the scanner result into dialog box.
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        /*AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Scan Result");
         builder.setMessage(result.getText().toString());
         builder.setPositiveButton("CHECK OUT", new DialogInterface.OnClickListener() {
@@ -75,7 +75,15 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
             }
         });
         AlertDialog alert1 = builder.create();
-        alert1.show();
+        alert1.show();*/
+        VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result.getText().toString(),
+                OrganizationID, SecurityID);
+        checkOut.execute();
+        checkoutdialog = ProgressDialog.show(CheckoutVisitors.this, "", "Checking Out...", true);
+        mythread = null;
+        Runnable runnable = new DisplayTimer();
+        mythread = new Thread(runnable);
+        mythread.start();
     }
 
     class DisplayTimer implements Runnable {
@@ -138,6 +146,14 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
 
         overridePendingTransition(0, 0);
         startActivity(intent);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (mythread.isAlive()) {
+            mythread.interrupt();
+        }
+        super.onDestroy();
     }
 
     private void createdialog(String Message, String Checkout) {

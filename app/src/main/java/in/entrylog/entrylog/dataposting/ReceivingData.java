@@ -366,7 +366,7 @@ public class ReceivingData {
         String Visitor_id, Visitors_Name, Visitors_Email, Visitors_Mobile, Visitors_Address, Visitors_tomeet, Visitors_VehicleNo = "",
                 Visitors_Photo, Visitors_CheckInTime, Visitors_CheckInBy, Visitors_BarCode, Check_in_User, Check_out_User,
                 Visitor_Designation, Department, Purpose, House_number, Flat_number, Block, No_Visitor, aClass, Section,
-                Student_Name, ID_Card;
+                Student_Name, ID_Card, Visitors_CheckOutTime;
         try {
             JSONArray ja = new JSONArray(result);
             for (int i = 0; i < ja.length(); i++) {
@@ -397,6 +397,8 @@ public class ReceivingData {
                         details.setVisitors_CheckInTime(Visitors_CheckInTime);
                         Visitors_CheckInBy = jo.getString("check_in_by");
                         details.setVisitors_CheckInBy(Visitors_CheckInBy);
+                        Visitors_CheckOutTime = jo.getString("checked_out_time");
+                        details.setVisitors_CheckOutTime(Visitors_CheckOutTime);
                         Visitors_BarCode = jo.getString("visitors_bar_code");
                         details.setVisitors_BarCode(Visitors_BarCode);
                         Check_in_User = jo.getString("check_in_by_name");

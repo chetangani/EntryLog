@@ -11,11 +11,18 @@
 
     <!-- Accessing camera hardware -->
     <uses-feature android:name="android.hardware.camera" />
-
-    <uses-permission android:name="android.permission.NFC" />
     <uses-permission android:name="android.permission.CAMERA" />
+	
+    <uses-permission android:name="android.permission.VIBRATE" />
+	
+	<!-- Accessing nfc hardware -->
+    <uses-permission android:name="android.permission.NFC" />
+	
+	<!-- Accessing storage -->
     <uses-permission android:name="android.permission.WRITE_INTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+	
+	<!-- Accessing bluetooth hardware -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 
@@ -54,7 +61,6 @@
         <service android:name=".main.services.FieldsService" />
         <service android:name=".main.services.StaffService" />
         <service android:name=".main.services.PrintingService" />
-        <!--<service android:name=".main.services.PermissionService" />-->
 
         <activity android:name=".main.el101_102.Visitor_Details_EL101" />
         <activity android:name=".main.Search_Details" />

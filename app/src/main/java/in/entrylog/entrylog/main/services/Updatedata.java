@@ -202,14 +202,25 @@ public class Updatedata extends Service {
             details.setVisitorCheckedIn(false);
             Visitors_id = details.getVisitorsId();
             if (UploadImage.equals("Yes")) {
-                BitmapFactory.Options options = new BitmapFactory.Options();
+                try {
+                    BitmapFactory.Options options = new BitmapFactory.Options();
 
-                // downsizing image as it throws OutOfMemory Exception for larger
-                // images
-                /*options.inSampleSize = 8;*/
-                Bitmap bitmap = BitmapFactory.decodeFile(ImagePath, options);
-                Log.d("debug", "Upload Image Size: "+sizeOf(bitmap));
-                new Upload_Image(rotateImage(bitmap, ImagePath), Mobile, Visitors_id).execute();
+                    // downsizing image as it throws OutOfMemory Exception for larger
+                    // images
+                    /*options.inSampleSize = 8;*/
+                    Bitmap bitmap = BitmapFactory.decodeFile(ImagePath, options);
+                    Log.d("debug", "Upload Image Size: "+sizeOf(bitmap));
+                    new Upload_Image(rotateImage(bitmap, ImagePath), Mobile, Visitors_id).execute();
+                } catch (OutOfMemoryError e) {
+                    BitmapFactory.Options options = new BitmapFactory.Options();
+
+                    // downsizing image as it throws OutOfMemory Exception for larger
+                    // images
+                    options.inSampleSize = 8;
+                    Bitmap bitmap = BitmapFactory.decodeFile(ImagePath, options);
+                    Log.d("debug", "Upload Image Size: "+sizeOf(bitmap));
+                    new Upload_Image(rotateImage(bitmap, ImagePath), Mobile, Visitors_id).execute();
+                }
             } else {
                 completed = true;
             }

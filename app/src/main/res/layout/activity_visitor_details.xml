@@ -27,7 +27,7 @@
             app:expandedTitleMarginEnd="64dp"
             app:expandedTitleMarginStart="48dp" >
 
-            <ImageView
+            <com.android.volley.toolbox.NetworkImageView
                 android:id="@+id/visitor_image"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -54,7 +54,6 @@
         android:id="@+id/scroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="20dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <include layout="@layout/nested_visitor_details"/>

@@ -1,12 +1,9 @@
 package in.entrylog.entrylog.main;
 
 import android.Manifest;
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlarmManager;
-import android.app.Dialog;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -15,10 +12,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Build;
-import android.os.Environment;
 import android.os.Handler;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -35,11 +29,9 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -50,18 +42,15 @@ import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
 import in.entrylog.entrylog.dataposting.ConnectingTask.LoginData;
 import in.entrylog.entrylog.dataposting.ConnectingTask.OrganizationPermissions;
-import in.entrylog.entrylog.main.services.FieldsService;
-import in.entrylog.entrylog.main.services.PermissionService;
-import in.entrylog.entrylog.main.services.PrintingService;
-import in.entrylog.entrylog.main.services.StaffService;
 import in.entrylog.entrylog.values.DetailsValue;
 import in.entrylog.entrylog.values.FunctionCalls;
 
 public class MainActivity extends AppCompatActivity {
     public static final String PREFS_NAME = "MyPrefsFile";
-    private static final int FAILURE_DLG = 1;
-    private static final int EXISTS_DLG = 2;
-    private static final int BLOCKED_DLG = 3;
+    private static final int REQUEST_FOR_ACTIVITY_CODE = 1;
+    private static final int FAILURE_DLG = 2;
+    private static final int EXISTS_DLG = 3;
+    private static final int BLOCKED_DLG = 4;
     Button btn_login;
     EditText orgid_etTxt, user_etTxt, pass_etTxt;
     TextView tv_version;
@@ -140,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (loginsuccess) {
             Intent login = new Intent(MainActivity.this, BlocksActivity.class);
-            startActivity(login);
+            startActivityForResult(login, REQUEST_FOR_ACTIVITY_CODE);
         }
 
         password_box.setOnCheckedChangeListener(new OnCheckedChangeListener() {
@@ -160,64 +149,66 @@ public class MainActivity extends AppCompatActivity {
         btn_login.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (functionCalls.isInternetOn(MainActivity.this)) {
-                    Orgid = orgid_etTxt.getText().toString();
-                    if (!Orgid.equals("")) {
-                        User = user_etTxt.getText().toString();
-                        if (!User.equals("")) {
-                            Password = pass_etTxt.getText().toString();
-                            if (!Password.equals("")) {
-                                LoginData login = task.new LoginData(User, Password, Orgid, details);
-                                login.execute();
-                                dialog = ProgressDialog.show(MainActivity.this, "", "Logging In please wait..", true);
-                                mythread = null;
-                                Runnable runnable = new LoginTimer();
-                                mythread = new Thread(runnable);
-                                mythread.start();
-                            } else {
-                                pass_etTxt.setError("Enter Password");
-                                if (Orgid.equals("")) {
-                                    orgid_etTxt.setError("Enter Organization ID");
-                                }
-                                if (User.equals("")) {
-                                    user_etTxt.setError("Enter Username");
-                                }
-                            }
-                        } else {
-                            user_etTxt.setError("Enter Username");
-                            if (Orgid.equals("")) {
-                                orgid_etTxt.setError("Enter Organization ID");
-                            }
-                            if (Password.equals("")) {
-                                pass_etTxt.setError("Enter Password");
-                            }
-                        }
-                    } else {
-                        orgid_etTxt.setError("Enter Organization ID");
-                        if (User.equals("")) {
-                            user_etTxt.setError("Enter Username");
-                        }
-                        if (Password.equals("")) {
-                            pass_etTxt.setError("Enter Password");
-                        }
-                    }
-                } else {
-                    Toast.makeText(MainActivity.this, "Please Turn On Internet", Toast.LENGTH_SHORT).show();
-                }
+                Logindetails();
             }
         });
 
         pass_etTxt.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
-                boolean handled = false;
                 if (i == EditorInfo.IME_ACTION_DONE) {
-                    functionCalls.LogStatus("Clicked on Done Button");
-                    handled = true;
+                    Logindetails();
                 }
-                return handled;
+                return false;
             }
         });
+    }
+
+    private void Logindetails() {
+        if (functionCalls.isInternetOn(MainActivity.this)) {
+            Orgid = orgid_etTxt.getText().toString();
+            if (!Orgid.equals("")) {
+                User = user_etTxt.getText().toString();
+                if (!User.equals("")) {
+                    Password = pass_etTxt.getText().toString();
+                    if (!Password.equals("")) {
+                        LoginData login = task.new LoginData(User, Password, Orgid, details);
+                        login.execute();
+                        dialog = ProgressDialog.show(MainActivity.this, "", "Logging In please wait..", true);
+                        mythread = null;
+                        Runnable runnable = new LoginTimer();
+                        mythread = new Thread(runnable);
+                        mythread.start();
+                    } else {
+                        pass_etTxt.setError("Enter Password");
+                        if (Orgid.equals("")) {
+                            orgid_etTxt.setError("Enter Organization ID");
+                        }
+                        if (User.equals("")) {
+                            user_etTxt.setError("Enter Username");
+                        }
+                    }
+                } else {
+                    user_etTxt.setError("Enter Username");
+                    if (Orgid.equals("")) {
+                        orgid_etTxt.setError("Enter Organization ID");
+                    }
+                    if (Password.equals("")) {
+                        pass_etTxt.setError("Enter Password");
+                    }
+                }
+            } else {
+                orgid_etTxt.setError("Enter Organization ID");
+                if (User.equals("")) {
+                    user_etTxt.setError("Enter Username");
+                }
+                if (Password.equals("")) {
+                    pass_etTxt.setError("Enter Password");
+                }
+            }
+        } else {
+            Toast.makeText(MainActivity.this, "Please Turn On Internet", Toast.LENGTH_SHORT).show();
+        }
     }
 
     class LoginTimer implements Runnable {
@@ -248,10 +239,8 @@ public class MainActivity extends AppCompatActivity {
                         showtoast("ID: "+ID);
                         String SecurityID = details.getGuardID();
                         functionCalls.LogStatus("SecurityID: "+SecurityID);
-                        showtoast("SecurityID: "+SecurityID);
                         String OrganizationName = details.getOrganizationName();
                         functionCalls.LogStatus("OrganizationName: "+OrganizationName);
-                        showtoast("OrganizationName: "+OrganizationName);
                         String Nighttime = details.getOverNightStay_Time();
                         functionCalls.LogStatus("Nighttime: "+Nighttime);
                         showtoast("Nighttime: "+Nighttime);
@@ -286,11 +275,7 @@ public class MainActivity extends AppCompatActivity {
                         editor.putString("CurrentDate", Currentdate());
                         editor.putString("OverNightTime", OverNightTime);
                         editor.commit();
-                        showtoast("1st commit over");
-                        showtoast("OverNightTime: "+OverNightTime);
                         functionCalls.deleteDataBasefile();
-                        showtoast("Checked database");
-                        showtoast("Started Permission");
                         OrganizationPermissions organizationPermissions = task.new OrganizationPermissions(ID, details);
                         organizationPermissions.execute();
                     }
@@ -318,10 +303,8 @@ public class MainActivity extends AppCompatActivity {
                     if (details.isPermissionSuccess()) {
                         details.setPermissionSuccess(false);
                         mythread.interrupt();
-                        showtoast("Permission Success");
                         editor.putString("Login", "Yes");
                         editor.commit();
-                        showtoast("Login Success");
                         OTPAccess = details.getOTPAccess();
                         if (OTPAccess.equals("1")) {
                             editor.putString("OTPAccess", "Yes");
@@ -329,7 +312,6 @@ public class MainActivity extends AppCompatActivity {
                             editor.putString("OTPAccess", "No");
                         }
                         editor.commit();
-                        showtoast("OTPAccess: "+settings.getString("OTPAccess", ""));
                         ImageAccess = details.getImageAccess();
                         if (ImageAccess.equals("1")) {
                             editor.putString("ImageAccess", "Yes");
@@ -337,7 +319,6 @@ public class MainActivity extends AppCompatActivity {
                             editor.putString("ImageAccess", "No");
                         }
                         editor.commit();
-                        showtoast("ImageAccess: "+settings.getString("ImageAccess", ""));
                         Printertype = details.getPrintertype();
                         editor.putString("Printertype", Printertype);
                         editor.commit();
@@ -377,15 +358,13 @@ public class MainActivity extends AppCompatActivity {
                             editor.putString("Cameratype", "External");
                         }
                         editor.commit();
-                        showtoast("Cameratype: "+settings.getString("Cameratype", ""));
                         editor.putString("UpdateData", "");
                         editor.commit();
-                        showtoast("Login Successfully completed");
                         loginsuccess = true;
                         loginpageview();
                         dialog.dismiss();
                         Intent login = new Intent(MainActivity.this, BlocksActivity.class);
-                        startActivity(login);
+                        startActivityForResult(login, REQUEST_FOR_ACTIVITY_CODE);
                     }
                     if (details.isPermissionFailure()) {
                         details.setPermissionFailure(false);
@@ -394,8 +373,7 @@ public class MainActivity extends AppCompatActivity {
                         loginpageview();
                         dialog.dismiss();
                         Intent login = new Intent(MainActivity.this, BlocksActivity.class);
-                        startActivity(login);
-                        btn_login.setVisibility(View.VISIBLE);
+                        startActivityForResult(login, REQUEST_FOR_ACTIVITY_CODE);
                     }
                 } catch(Exception e){
                 }
@@ -455,6 +433,9 @@ public class MainActivity extends AppCompatActivity {
             pass_etTxt.setText("");
             pass_etTxt.setEnabled(false);
             orgid_etTxt.requestFocus();
+            if (password_box.isChecked()) {
+                password_box.setChecked(false);
+            }
         } else {
             OverNightTime = settings.getString("OverNightTime", "");
             if (!OverNightTime.equals("")) {
@@ -467,6 +448,9 @@ public class MainActivity extends AppCompatActivity {
             pass_etTxt.setText("");
             pass_etTxt.setEnabled(true);
             orgid_etTxt.requestFocus();
+            if (password_box.isChecked()) {
+                password_box.setChecked(false);
+            }
         }
     }
 
@@ -479,6 +463,16 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 1) {
+            if (resultCode == Activity.RESULT_OK) {
+                loginsuccess = false;
+                loginpageview();
+            }
+        }
     }
 
     @TargetApi(23)

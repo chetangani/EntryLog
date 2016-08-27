@@ -18,7 +18,7 @@
         android:layout_height="115dp"
         android:orientation="horizontal">
 
-        <ImageView
+        <com.android.volley.toolbox.NetworkImageView
             android:id="@+id/visitors_card_image"
             android:layout_width="115dp"
             android:layout_height="match_parent"

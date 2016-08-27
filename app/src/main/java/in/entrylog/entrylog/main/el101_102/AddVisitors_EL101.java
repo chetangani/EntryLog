@@ -30,14 +30,17 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Base64;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
@@ -213,7 +216,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
     Thread mythread, mobilesuggestthread;
     static ProgressDialog dialog = null;
     boolean Visitorsimage = false, textfileready = false, imageprinting = false, barcodeprinting = false, reprint = false,
-            otpcheck = false, manualcheck = false, otpresent = false;
+            otpcheck = false, manualcheck = false, otpresent = false, mobilesuggestsuccess = false;
     static boolean completed = false;
     View mProgressBar;
     DataBase dataBase;
@@ -373,6 +376,18 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                 }
             }
         });
+
+        tomeet_et.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+                boolean handled = false;
+                if (i == EditorInfo.IME_ACTION_NEXT) {
+                    vehicle_et.requestFocus();
+                    handled = true;
+                }
+                return handled;
+            }
+        });
     }
 
     @Override
@@ -410,18 +425,17 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                                             UpdateVisitorImage, Visitor_Designation, Department, Purpose, House_number,
                                             Flat_number, Block, No_Visitor, aClass, Section, Student_Name, ID_Card,
                                             settings.getString("Device", ""), Visitor_Entry);
-                                }
+                                }/*
+                                dataPrinting.SaveOrganization(OrganizationName);
+                                dataPrinting.SaveHeader();
+                                PrintData();
+                                dataPrinting.SaveEmpty();*/
                                 functionCalls.LogStatus("Update Data Service: "+settings.getString("UpdateData", ""));
                                 if (!settings.getString("UpdateData", "").equals("Running")) {
                                     Log.d("debug", "Service Started");
                                     Intent intent = new Intent(AddVisitors_EL101.this, Updatedata.class);
                                     startService(intent);
                                 }
-                                Log.d("debug", "Saving Text");
-                                dataPrinting.SaveOrganization(OrganizationName);
-                                dataPrinting.SaveHeader();
-                                PrintData();
-                                dataPrinting.SaveEmpty();
                                 PrintingData();
                             } else {
                                 Toast.makeText(AddVisitors_EL101.this, "Please take a Photo of Visitor", Toast.LENGTH_SHORT).show();
@@ -445,14 +459,21 @@ public class AddVisitors_EL101 extends AppCompatActivity {
 
     private void PrintingData() {
         dialog = ProgressDialog.show(AddVisitors_EL101.this, "", "Updating file...", true);
+        Log.d("debug", "Saving Text");
+        /*dataPrinting.SaveOrganization(OrganizationName);
+        dataPrinting.SaveHeader();
+        SaveData();
+        dataPrinting.SaveEmpty();*/
         Log.d("debug", "Printing Header");
         SendCommad(new byte[]{0x1d, 0x21, 0x01});
         SendCommad(new byte[]{0x1b, 0x61, 0x01});
-        printString(OrganizationPath);
+        /*printString(OrganizationPath);*/
+        printString(OrganizationName);
         SendCommad(new byte[]{0x1d, 0x21, 0x00});
         SendCommad(new byte[]{0x1d, 0x21, 0x00});
         SendCommad(new byte[]{0x1d, 0x21, 0x00});
-        printString(HeaderPath);
+        /*printString(HeaderPath);*/
+        printString("VISITOR");
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -468,9 +489,10 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                 if (imageprinting) {
                     imageprinting = false;
                 }
-                printString(EmptyPath);
-                barcodeprinting = true;
+                /*printString(EmptyPath);*/
                 if (settings.getString("Scannertype", "").equals("Barcode")) {
+                    printString("   "+"\n");
+                    barcodeprinting = true;
                     printBarCode(BarCodeValue);
                 } else {
                     printQRcode(195, BarCodeValue);
@@ -483,15 +505,18 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                 Log.d("debug", "Printing Header");
                 if (barcodeprinting) {
                     barcodeprinting = false;
+                    printString("   "+"\n");
                 }
-                printString(EmptyPath);
+                /*printString(EmptyPath);*/
                 SendCommad(new byte[]{0x1b, 0x61, 0x00});
                 SendCommad(new byte[]{0x1b, 0x61, 0x00});
                 SendCommad(new byte[]{0x1b, 0x61, 0x00});
-                /*PrintData();*/
-                printString(DataPath);
+                PrintData();
+                printString("   "+"\n");
+                printString("   "+"\n");
+                /*printString(DataPath);
                 printString(EmptyPath);
-                printString(EmptyPath);
+                printString(EmptyPath);*/
             }
         }, 6000);
         new Handler().postDelayed(new Runnable() {
@@ -535,9 +560,25 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                         details.setMobileAutoSuggestSuccess(false);
                         Successview();
                         Extrafields();
-                        AddVisitors_EL101.this.getWindow().setSoftInputMode(WindowManager.LayoutParams.
-                                SOFT_INPUT_STATE_ALWAYS_HIDDEN);
-                        addvisitorslayout.setVisibility(View.VISIBLE);
+                        mobilesuggestsuccess = true;
+                        if (otpcheck) {
+                            otpcheck = false;
+                            Random rand = new Random();
+                            int num = rand.nextInt(9000) + 1000;
+                            editor.putString("OTP", ""+num);
+                            editor.commit();
+                            SMSOTP smsotp = task.new SMSOTP("91"+Mobile, settings.getString("OTP", ""));
+                            smsotp.execute();
+                            showToast("OTP Sent");
+                            showdialog(OTP_DLG);
+                        } else if (manualcheck) {
+                            manualcheck = false;
+                            AddVisitors_EL101.this.getWindow().setSoftInputMode(WindowManager.LayoutParams.
+                                    SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+                            addvisitorslayout.setVisibility(View.VISIBLE);
+                            mobile_et.setText(Mobile);
+                            name_et.requestFocus();
+                        }
                         mobilesuggestthread.interrupt();
                     }
                     if (details.isMobileAutoSuggestFailure()) {
@@ -911,94 +952,177 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                     functionCalls.LogStatus("Print Order: "+PrintOrder);
                     String Display = PrintOrder.substring(2, PrintOrder.length());
                     functionCalls.LogStatus("Display: "+Display);
-                    myOutWriter.append(Display+": ");
+                    /*myOutWriter.append(Display+": ");
                     if (Display.equals("Name")) {
-                        myOutWriter.append(Name + "\r\n");/*
-                        printString(Display+": "+Name+"\n");*/
+                        myOutWriter.append(Name + "\r\n");*//*
+                        printString(Display+": "+Name+"\n");*//*
                     }
                     if (Display.equals("Mobile")) {
-                        myOutWriter.append(Mobile + "\r\n");/*
-                        printString(Display+": "+Mobile+"\n");*/
+                        myOutWriter.append(Mobile + "\r\n");*//*
+                        printString(Display+": "+Mobile+"\n");*//*
                     }
                     if (Display.equals("From")) {
-                        myOutWriter.append(FromAddress + "\r\n");/*
-                        printString(Display+": "+FromAddress+"\n");*/
+                        myOutWriter.append(FromAddress + "\r\n");*//*
+                        printString(Display+": "+FromAddress+"\n");*//*
                     }
                     if (Display.equals("To Meet")) {
-                        myOutWriter.append(ToMeet + "\r\n");/*
-                        printString(Display+": "+ToMeet+"\n");*/
+                        myOutWriter.append(ToMeet + "\r\n");*//*
+                        printString(Display+": "+ToMeet+"\n");*//*
                     }
                     if (Display.equals("Date")) {
                         if (!reprint) {
                             DateTime = CurrentDate() + " " + CurrentTime() + "\r\n";
-                            myOutWriter.append(DateTime);/*
-                            printString(Display+": "+DateTime+"\n");*/
+                            myOutWriter.append(DateTime);*//*
+                            printString(Display+": "+DateTime+"\n");*//*
                         } else {
-                            myOutWriter.append(DateTime);/*
-                            printString(Display+": "+DateTime+"\n");*/
+                            myOutWriter.append(DateTime);*//*
+                            printString(Display+": "+DateTime+"\n");*//*
                         }
                     }
                     if (Display.equals("Visitor Designation")) {
-                        myOutWriter.append(Visitor_Designation + "\r\n");/*
-                        printString(Display+": "+Visitor_Designation+"\n");*/
+                        myOutWriter.append(Visitor_Designation + "\r\n");*//*
+                        printString(Display+": "+Visitor_Designation+"\n");*//*
                     }
                     if (Display.equals("Department")) {
-                        myOutWriter.append(Department + "\r\n");/*
-                        printString(Display+": "+Department+"\n");*/
+                        myOutWriter.append(Department + "\r\n");*//*
+                        printString(Display+": "+Department+"\n");*//*
                     }
                     if (Display.equals("Purpose")) {
-                        myOutWriter.append(Purpose + "\r\n");/*
-                        printString(Display+": "+Purpose+"\n");*/
+                        myOutWriter.append(Purpose + "\r\n");*//*
+                        printString(Display+": "+Purpose+"\n");*//*
                     }
                     if (Display.equals("House No")) {
-                        myOutWriter.append(House_number + "\r\n");/*
-                        printString(Display+": "+House_number+"\n");*/
+                        myOutWriter.append(House_number + "\r\n");*//*
+                        printString(Display+": "+House_number+"\n");*//*
                     }
                     if (Display.equals("Flat No")) {
                         myOutWriter.append(Flat_number + "\r\n");
-                        /*printString(Display+": "+Flat_number+"\n");*/
+                        *//*printString(Display+": "+Flat_number+"\n");*//*
                     }
                     if (Display.equals("Block")) {
-                        myOutWriter.append(Block + "\r\n");/*
-                        printString(Display+": "+Block+"\n");*/
+                        myOutWriter.append(Block + "\r\n");*//*
+                        printString(Display+": "+Block+"\n");*//*
                     }
                     if (Display.equals("No of Visitor")) {
-                        myOutWriter.append(No_Visitor + "\r\n");/*
-                        printString(Display+": "+No_Visitor+"\n");*/
+                        myOutWriter.append(No_Visitor + "\r\n");*//*
+                        printString(Display+": "+No_Visitor+"\n");*//*
                     }
                     if (Display.equals("Class")) {
                         myOutWriter.append(aClass + "\r\n");
-                        /*printString(Display+": "+aClass+"\n");*/
+                        *//*printString(Display+": "+aClass+"\n");*//*
                     }
                     if (Display.equals("Section")) {
                         myOutWriter.append(Section + "\r\n");
-                        /*printString(Display+": "+Section+"\n");*/
+                        *//*printString(Display+": "+Section+"\n");*//*
                     }
                     if (Display.equals("Student")) {
-                        myOutWriter.append(Student_Name + "\r\n");/*
-                        printString(Display+": "+Student_Name+"\n");*/
+                        myOutWriter.append(Student_Name + "\r\n");*//*
+                        printString(Display+": "+Student_Name+"\n");*//*
                     }
                     if (Display.equals("Id Card")) {
-                        myOutWriter.append(ID_Card + "\r\n");/*
-                        printString(Display+": "+ID_Card+"\n");*/
+                        myOutWriter.append(ID_Card + "\r\n");*//*
+                        printString(Display+": "+ID_Card+"\n");*//*
                     }
                     if (Display.equals("Entry")) {
-                        myOutWriter.append(User + "\r\n");/*
-                        printString(Display+": "+User+"\n");*/
+                        myOutWriter.append(User + "\r\n");*//*
+                        printString(Display+": "+User+"\n");*//*
                     }
                     if (Display.equals("Email")) {
                         myOutWriter.append(Email + "\r\n");
-                        /*printString(Display+": "+Email+"\n");*/
+                        *//*printString(Display+": "+Email+"\n");*//*
                     }
                     if (Display.equals("Vehicle Number")) {
                         myOutWriter.append(Vehicleno + "\r\n");
-                        /*printString(Display+": "+Vehicleno+"\n");*/
+                        *//*printString(Display+": "+Vehicleno+"\n");*//*
+                    }*/
+                    /*myOutWriter.append(Display+": ");*/
+                    if (Display.equals("Name")) {
+                        /*myOutWriter.append(Name + "\r\n");*/
+                        printString(Display+": "+Name/*+"\n"*/);
+                    }
+                    if (Display.equals("Mobile")) {
+                        /*myOutWriter.append(Mobile + "\r\n");*/
+                        printString(Display+": "+Mobile/*+"\n"*/);
+                    }
+                    if (Display.equals("From")) {
+                        /*myOutWriter.append(FromAddress + "\r\n");*/
+                        printString(Display+": "+FromAddress/*+"\n"*/);
+                    }
+                    if (Display.equals("To Meet")) {
+                        /*myOutWriter.append(ToMeet + "\r\n");*/
+                        printString(Display+": "+ToMeet/*+"\n"*/);
+                    }
+                    if (Display.equals("Date")) {
+                        if (!reprint) {
+                            DateTime = CurrentDate() + " " + CurrentTime()/* + "\r\n"*/;
+                            /*myOutWriter.append(DateTime);*/
+                            printString(Display+": "+DateTime/*+"\n"*/);
+                        } else {
+                            /*myOutWriter.append(DateTime);*/
+                            printString(Display+": "+DateTime/*+"\n"*/);
+                        }
+                    }
+                    if (Display.equals("Visitor Designation")) {
+                        /*myOutWriter.append(Visitor_Designation + "\r\n");*/
+                        printString(Display+": "+Visitor_Designation/*+"\n"*/);
+                    }
+                    if (Display.equals("Department")) {
+                        /*myOutWriter.append(Department + "\r\n");*/
+                        printString(Display+": "+Department/*+"\n"*/);
+                    }
+                    if (Display.equals("Purpose")) {
+                        /*myOutWriter.append(Purpose + "\r\n");*/
+                        printString(Display+": "+Purpose/*+"\n"*/);
+                    }
+                    if (Display.equals("House No")) {
+                        /*myOutWriter.append(House_number + "\r\n");*/
+                        printString(Display+": "+House_number/*+"\n"*/);
+                    }
+                    if (Display.equals("Flat No")) {
+                        /*myOutWriter.append(Flat_number + "\r\n");*/
+                        printString(Display+": "+Flat_number/*+"\n"*/);
+                    }
+                    if (Display.equals("Block")) {
+                        /*myOutWriter.append(Block + "\r\n");*/
+                        printString(Display+": "+Block/*+"\n"*/);
+                    }
+                    if (Display.equals("No of Visitor")) {
+                        /*myOutWriter.append(No_Visitor + "\r\n");*/
+                        printString(Display+": "+No_Visitor/*+"\n"*/);
+                    }
+                    if (Display.equals("Class")) {
+                        /*myOutWriter.append(aClass + "\r\n");*/
+                        printString(Display+": "+aClass/*+"\n"*/);
+                    }
+                    if (Display.equals("Section")) {
+                        /*myOutWriter.append(Section + "\r\n");*/
+                        printString(Display+": "+Section/*+"\n"*/);
+                    }
+                    if (Display.equals("Student")) {
+                        /*myOutWriter.append(Student_Name + "\r\n");*/
+                        printString(Display+": "+Student_Name/*+"\n"*/);
+                    }
+                    if (Display.equals("Id Card")) {
+                        /*myOutWriter.append(ID_Card + "\r\n");*/
+                        printString(Display+": "+ID_Card/*+"\n"*/);
+                    }
+                    if (Display.equals("Entry")) {
+                        /*myOutWriter.append(User + "\r\n");*/
+                        printString(Display+": "+User/*+"\n"*/);
+                    }
+                    if (Display.equals("Email")) {
+                        /*myOutWriter.append(Email + "\r\n");*/
+                        printString(Display+": "+Email/*+"\n"*/);
+                    }
+                    if (Display.equals("Vehicle Number")) {
+                        /*myOutWriter.append(Vehicleno + "\r\n");*/
+                        printString(Display+": "+Vehicleno/*+"\n"*/);
                     }
                 }
             }
-            myOutWriter.append(" " + "\r\n");
+            /*myOutWriter.append(" " + "\r\n");
             myOutWriter.close();
-            fOut.close();
+            fOut.close();*/
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1098,6 +1222,15 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                             checkmobilesuggest(etmobile);
                         }
                     });
+                } else {
+                    builder.setPositiveButton("MANUAL", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Visitor_Entry = "2";
+                            manualcheck = true;
+                            checkmobilesuggest(etmobile);
+                        }
+                    });
                 }
                 builder.setNeutralButton("CANCEL", new DialogInterface.OnClickListener() {
                     @Override
@@ -1149,7 +1282,15 @@ public class AddVisitors_EL101 extends AppCompatActivity {
             case OTP_DLG:
                 final AlertDialog.Builder otpbuilder = new AlertDialog.Builder(this);
                 otpbuilder.setTitle("Mobile Number");
-                otpbuilder.setMessage(Mobile);
+                if (!otpresent) {
+                    otpbuilder.setMessage(Mobile);
+                } else {
+                    if (otpcount == 2) {
+                        otpbuilder.setMessage("OTP has been resent 2 times"+"\n"+Mobile);
+                    } else {
+                        otpbuilder.setMessage("OTP has been resent"+"\n"+Mobile);
+                    }
+                }
                 LinearLayout otpll = (LinearLayout) getLayoutInflater().inflate(R.layout.dialogview, null);
                 otpbuilder.setView(otpll);
                 otpbuilder.setCancelable(false);
@@ -1166,9 +1307,15 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                             String OTP = otpetTxt.getText().toString();
                             String SavedOTP = settings.getString("OTP", "");
                             if (OTP.equals(SavedOTP)) {
-                                addvisitorslayout.setVisibility(View.VISIBLE);
-                                mobile_et.setText(Mobile);
-                                name_et.requestFocus();
+                                if (mobilesuggestsuccess) {
+                                    AddVisitors_EL101.this.getWindow().setSoftInputMode(WindowManager.LayoutParams.
+                                            SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+                                    addvisitorslayout.setVisibility(View.VISIBLE);
+                                } else {
+                                    addvisitorslayout.setVisibility(View.VISIBLE);
+                                    mobile_et.setText(Mobile);
+                                    name_et.requestFocus();
+                                }
                             } else {
                                 otpetTxt.setError("Entered OTP is not matching please enter correct one..");
                                 otpetTxt.setText("");
@@ -1204,8 +1351,13 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                         public void onClick(DialogInterface dialog, int which) {
                             Visitor_Entry = "2";
                             addvisitorslayout.setVisibility(View.VISIBLE);
-                            mobile_et.setText(Mobile);
-                            name_et.requestFocus();
+                            if (mobilesuggestsuccess) {
+                                AddVisitors_EL101.this.getWindow().setSoftInputMode(WindowManager.LayoutParams.
+                                        SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+                            } else {
+                                mobile_et.setText(Mobile);
+                                name_et.requestFocus();
+                            }
                         }
                     });
                 } else {
@@ -1270,7 +1422,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
         String Image_Url = "http://www.tellservice.com/entrylog/visitor_images/";
         String Image = details.getVisitors_Photo();
         String Image_Path = Image_Url + Image;
-        Picasso.with(AddVisitors_EL101.this).load(Image_Path).error(R.drawable.blankperson).into(photo_img);
+        Picasso.with(AddVisitors_EL101.this).load(Image_Path).into(photo_img);
         Et_field1.setText(details.getVisitor_Designation());
         Et_field2.setText(details.getDepartment());
         Et_field3.setText(details.getPurpose());
@@ -1513,11 +1665,11 @@ public class AddVisitors_EL101 extends AppCompatActivity {
     }
 
     public void printString(String str) {
-        /*if((str!=null)&&(str.getBytes().length!=0)){
+        if((str!=null)&&(str.getBytes().length!=0)){
             byte[] send = null;
             try {
                 //send = addEnter(str.getBytes("ISO8859-16"));
-                //打印包含中文字符的文字 只能使用GBK2312，其他外语特殊字符用UTF-8 ，测试匈牙利语需要用iso859-16
+                //??????????? ????GBK2312,?????????UTF-8 ,?????????iso859-16
                 //If want to print Chinese character use "GBK2312", others use "UTF-8";
                 send = addEnter(str.getBytes("GB2312"));
                 //send = str.getBytes("utf-8");
@@ -1529,8 +1681,8 @@ public class AddVisitors_EL101 extends AppCompatActivity {
             //msg.what=SendCommand;
             //msg.obj=send;
             //mHandler.sendMessageDelayed(msg,450);
-        }*/
-        String s1 = null;
+        }
+        /*String s1 = null;
         try {
             Log.d("debug", "Send Data Initialzing");
             //Read and Display from text file and print
@@ -1545,7 +1697,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                     byte[] send = null;
                     try {
                         //send = addEnter(str.getBytes("ISO8859-16"));
-                        //打印包含中文字符的文字 只能使用GBK2312，其他外语特殊字符用UTF-8 ，测试匈牙利语需要用iso859-16
+                        //??????????? ????GBK2312,?????????UTF-8 ,?????????iso859-16
                         //If want to print Chinese character use "GBK2312", others use "UTF-8";
                         send = addEnter(s1.getBytes("GB2312"));
                         //send = str.getBytes("utf-8");
@@ -1561,7 +1713,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
             e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     public byte[] addEnter(byte[] buf) {
@@ -1662,7 +1814,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
         localPrintPic.initPaint();
         localPrintPic.drawImage(0.0F, 0.0F, bitmap);
         byte[] var4  = localPrintPic.printDraw();
-        byte[] var2 = new byte[1160];// 宽度不能超过48个字节，也就是384的像素    一次发送24行，一行最大48个字节
+        byte[] var2 = new byte[1160];// ??????48???,???384???    ????24?,????48???
 
         int i = 0;
         if (localPrintPic.getLength()<=0)
@@ -1687,16 +1839,16 @@ public class AddVisitors_EL101 extends AppCompatActivity {
             var2[1] = 0x76;
             var2[2] = 0x30;
             var2[3] = 0;
-            var2[4] = (byte)(localPrintPic.getWidth() / 8);  //xl  图片宽度字节 低位
-            var2[5] = 0;    //xh  图片宽度字节 高位
+            var2[4] = (byte)(localPrintPic.getWidth() / 8);  //xl  ?????? ??
+            var2[5] = 0;    //xh  ?????? ??
             int line=0;
             if(localPrintPic.getLength()%24>0&&row==length-1){
                 line=localPrintPic.getLength()%24;
             }else{
                 line=24;
             }
-            var2[6] = (byte)line;    //yl  图片高度点数  低位
-            var2[7] = 0;   //yh	   图片高度点数  高位
+            var2[6] = (byte)line;    //yl  ??????  ??
+            var2[7] = 0;   //yh	   ??????  ??
             var13  =8;
             for(int var14 = 0; var14 <( (localPrintPic.getWidth() / 8)*line); var14++){
 

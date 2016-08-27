@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.ExifInterface;
@@ -136,7 +137,8 @@ public class AddVisitors_EL201 extends AppCompatActivity {
     Thread mythread, bluetooththread, scanningthread, mobilesuggestthread;
     static ProgressDialog dialog = null;
     boolean Visitorsimage = false, textfileready = false, imageprinting = false, barcodeprinting = false, reprint = false,
-            writeNFC = false, otpcheck = false, manualcheck = false, otpresent = false, nfcavailable = false;
+            writeNFC = false, otpcheck = false, manualcheck = false, otpresent = false, nfcavailable = false,
+            mobilesuggestsuccess = false;
     static boolean completed = false;
     View mProgressBar;
     DataBase dataBase;
@@ -508,9 +510,25 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                         details.setMobileAutoSuggestSuccess(false);
                         Successview();
                         Extrafields();
-                        AddVisitors_EL201.this.getWindow().setSoftInputMode(WindowManager.LayoutParams.
-                                SOFT_INPUT_STATE_ALWAYS_HIDDEN);
-                        addvisitorslayout.setVisibility(View.VISIBLE);
+                        mobilesuggestsuccess = true;
+                        if (otpcheck) {
+                            otpcheck = false;
+                            Random rand = new Random();
+                            int num = rand.nextInt(9000) + 1000;
+                            editor.putString("OTP", ""+num);
+                            editor.commit();
+                            SMSOTP smsotp = task.new SMSOTP("91"+Mobile, settings.getString("OTP", ""));
+                            smsotp.execute();
+                            showdialog(OTP_DLG);
+                            showToast("OTP Sent");
+                        } else if (manualcheck) {
+                            manualcheck = false;
+                            AddVisitors_EL201.this.getWindow().setSoftInputMode(WindowManager.LayoutParams.
+                                    SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+                            addvisitorslayout.setVisibility(View.VISIBLE);
+                            mobile_et.setText(Mobile);
+                            name_et.requestFocus();
+                        }
                         mobilesuggestthread.interrupt();
                     }
                     if (details.isMobileAutoSuggestFailure()) {
@@ -904,6 +922,15 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                             checkmobilesuggest(etmobile);
                         }
                     });
+                } else {
+                    builder.setPositiveButton("MANUAL", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Visitor_Entry = "2";
+                            manualcheck = true;
+                            checkmobilesuggest(etmobile);
+                        }
+                    });
                 }
                 builder.setNeutralButton("CANCEL", new DialogInterface.OnClickListener() {
                     @Override
@@ -980,7 +1007,15 @@ public class AddVisitors_EL201 extends AppCompatActivity {
             case OTP_DLG:
                 final AlertDialog.Builder otpbuilder = new AlertDialog.Builder(this);
                 otpbuilder.setTitle("Mobile Number");
-                otpbuilder.setMessage(Mobile);
+                if (!otpresent) {
+                    otpbuilder.setMessage(Mobile);
+                } else {
+                    if (otpcount == 2) {
+                        otpbuilder.setMessage("OTP has been resent 2 times"+"\n"+Mobile);
+                    } else {
+                        otpbuilder.setMessage("OTP has been resent"+"\n"+Mobile);
+                    }
+                }
                 LinearLayout otpll = (LinearLayout) getLayoutInflater().inflate(R.layout.dialogview, null);
                 otpbuilder.setView(otpll);
                 otpbuilder.setCancelable(false);
@@ -997,9 +1032,15 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                             String OTP = otpetTxt.getText().toString();
                             String SavedOTP = settings.getString("OTP", "");
                             if (OTP.equals(SavedOTP)) {
-                                addvisitorslayout.setVisibility(View.VISIBLE);
-                                mobile_et.setText(Mobile);
-                                name_et.requestFocus();
+                                if (mobilesuggestsuccess) {
+                                    AddVisitors_EL201.this.getWindow().setSoftInputMode(WindowManager.LayoutParams.
+                                            SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+                                    addvisitorslayout.setVisibility(View.VISIBLE);
+                                } else {
+                                    addvisitorslayout.setVisibility(View.VISIBLE);
+                                    mobile_et.setText(Mobile);
+                                    name_et.requestFocus();
+                                }
                             } else {
                                 otpetTxt.setError("Entered OTP is not matching please enter correct one..");
                                 otpetTxt.setText("");
@@ -1035,8 +1076,13 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                         public void onClick(DialogInterface dialog, int which) {
                             Visitor_Entry = "2";
                             addvisitorslayout.setVisibility(View.VISIBLE);
-                            mobile_et.setText(Mobile);
-                            name_et.requestFocus();
+                            if (mobilesuggestsuccess) {
+                                AddVisitors_EL201.this.getWindow().setSoftInputMode(WindowManager.LayoutParams.
+                                        SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+                            } else {
+                                mobile_et.setText(Mobile);
+                                name_et.requestFocus();
+                            }
                         }
                     });
                 } else {
@@ -1045,7 +1091,6 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                         public void onClick(DialogInterface dialog, int which) {
                             otpcount = otpcount + 1;
                             otpresent = true;
-                            otpbuilder.setMessage("OTP has been resent"+"\n"+Mobile);
                             SMSOTP smsotp = task.new SMSOTP("91"+Mobile, settings.getString("OTP", ""));
                             smsotp.execute();
                             showdialog(OTP_DLG);
@@ -1101,7 +1146,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
         String Image_Url = "http://www.tellservice.com/entrylog/visitor_images/";
         String Image = details.getVisitors_Photo();
         String Image_Path = Image_Url + Image;
-        Picasso.with(AddVisitors_EL201.this).load(Image_Path).error(R.drawable.blankperson).into(photo_img);
+        Picasso.with(AddVisitors_EL201.this).load(Image_Path).into(photo_img);
         Et_field1.setText(details.getVisitor_Designation());
         Et_field2.setText(details.getDepartment());
         Et_field3.setText(details.getPurpose());

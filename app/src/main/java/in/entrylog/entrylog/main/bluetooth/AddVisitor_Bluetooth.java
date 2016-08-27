@@ -1170,7 +1170,15 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
             case OTP_DLG:
                 final AlertDialog.Builder otpbuilder = new AlertDialog.Builder(this);
                 otpbuilder.setTitle("Mobile Number");
-                otpbuilder.setMessage(Mobile);
+                if (!otpresent) {
+                    otpbuilder.setMessage(Mobile);
+                } else {
+                    if (otpcount == 2) {
+                        otpbuilder.setMessage("OTP has been resent 2 times"+"\n"+Mobile);
+                    } else {
+                        otpbuilder.setMessage("OTP has been resent"+"\n"+Mobile);
+                    }
+                }
                 LinearLayout otpll = (LinearLayout) getLayoutInflater().inflate(R.layout.dialogview, null);
                 otpbuilder.setView(otpll);
                 otpbuilder.setCancelable(false);
@@ -1235,7 +1243,6 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                         public void onClick(DialogInterface dialog, int which) {
                             otpcount = otpcount + 1;
                             otpresent = true;
-                            otpbuilder.setMessage("OTP has been resent"+"\n"+Mobile);
                             SMSOTP smsotp = task.new SMSOTP("91"+Mobile, settings.getString("OTP", ""));
                             smsotp.execute();
                             showdialog(OTP_DLG);

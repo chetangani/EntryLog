@@ -1,18 +1,18 @@
 package in.entrylog.entrylog.main;
 
-import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.Surface;
-import android.view.View;
 
 import java.util.ArrayList;
 
@@ -26,8 +26,8 @@ import in.entrylog.entrylog.values.FunctionCalls;
 public class Overnightstay_Visitors extends AppCompatActivity {
     public static final String PREFS_NAME = "MyPrefsFile";
     public static final int VISITORS_DLG = 1;
+    public static final int NOTIFY_DLG = 2;
 
-    View mProgressBar;
     RecyclerView OverNightVisitorsView;
     ArrayList<DetailsValue> OverNightVisitorsList;
     VisitorsAdapters OverNightVisitorsadapter;
@@ -52,17 +52,11 @@ public class Overnightstay_Visitors extends AppCompatActivity {
 
         functionCalls.OrientationView(Overnightstay_Visitors.this);
 
-        Intent intent = getIntent();
-        if (intent.getExtras() != null) {
-            Bundle bnd = intent.getExtras();
-            ContextView = bnd.getString("VIEW");
-        }
+        ContextView = "OverNightStay";
         Organization_ID = settings.getString("OrganizationID", "");
         CheckingUser = settings.getString("User", "");
         Device = settings.getString("Device", "");
         PrinterType = settings.getString("Printertype", "");
-
-        mProgressBar = findViewById(R.id.overnight_visitors_progress);
 
         StaggeredRotationChanged();
         OverNightVisitorsView = (RecyclerView) findViewById(R.id.overnight_visitorsview);
@@ -73,14 +67,12 @@ public class Overnightstay_Visitors extends AppCompatActivity {
         OverNightVisitorsView.setLayoutManager(layoutManager);
         OverNightVisitorsView.setAdapter(OverNightVisitorsadapter);
 
-        OvernightStay_Visitors overnightStay_visitors = task.new OvernightStay_Visitors(OverNightVisitorsList,
-                OverNightVisitorsadapter, detailsValue, Organization_ID, Overnightstay_Visitors.this);
-        overnightStay_visitors.execute();
-        dialog = ProgressDialog.show(Overnightstay_Visitors.this, "", "Searching for a visitors..", true);
         nightstaythread = null;
         Runnable runnable = new VisitorsTimer();
         nightstaythread = new Thread(runnable);
         nightstaythread.start();
+
+        showdialog(NOTIFY_DLG);
     }
 
     private void StaggeredRotationChanged() {
@@ -152,7 +144,6 @@ public class Overnightstay_Visitors extends AppCompatActivity {
 
     protected void showdialog(int id) {
         switch (id) {
-
             case VISITORS_DLG:
                 AlertDialog.Builder novisitors = new AlertDialog.Builder(this);
                 novisitors.setTitle("Visitor Details");
@@ -167,6 +158,30 @@ public class Overnightstay_Visitors extends AppCompatActivity {
                 AlertDialog alertdialog = novisitors.create();
                 alertdialog.show();
                 break;
+
+            case NOTIFY_DLG:
+                ringtone();
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("Over Night Stay Visitors");
+                builder.setMessage("You have visitors who did not checkout in cut off time");
+                builder.setCancelable(false);
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        OvernightStay_Visitors overnightStay_visitors = task.new OvernightStay_Visitors(OverNightVisitorsList,
+                                OverNightVisitorsadapter, detailsValue, Organization_ID, Overnightstay_Visitors.this);
+                        overnightStay_visitors.execute();
+                        dialog = ProgressDialog.show(Overnightstay_Visitors.this, "", "Searching for a visitors..", true);
+                    }
+                });
+                builder.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        finish();
+                    }
+                });
+                AlertDialog alert1 = builder.create();
+                alert1.show();
         }
     }
 
@@ -176,5 +191,15 @@ public class Overnightstay_Visitors extends AppCompatActivity {
             nightstaythread.interrupt();
         }
         super.onDestroy();
+    }
+
+    public void ringtone(){
+        try {
+            Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
+            r.play();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
