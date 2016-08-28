@@ -221,9 +221,9 @@ public class CheckoutVisitors_EL201 extends AppCompatActivity implements ZXingSc
 
     @Override
     protected void onDestroy() {
-        if (mythread.isAlive()) {
+        /*if (mythread.isAlive()) {
             mythread.interrupt();
-        }
+        }*/
         super.onDestroy();
     }
 

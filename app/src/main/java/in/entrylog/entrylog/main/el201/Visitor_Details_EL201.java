@@ -359,14 +359,14 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
                     printString(DataPath);
                     printerController.PrinterController_Take_The_Paper(1);
                 }
-            }, 3500);
+            }, 4000);
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     dialog.dismiss();
                     showdialog(END_DLG);
                 }
-            }, 5000);
+            }, 5500);
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(Visitor_Details_EL201.this, "Error", Toast.LENGTH_SHORT).show();
@@ -534,6 +534,7 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
             else {
                 System.out.println("printerController.Write_Commandno");
             }
+            printerController.PrinterController_Linefeed();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -543,14 +544,27 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
 
         BitMatrix matrix = null;
         try {
-            if ("T001(Q)".equals(MachineVersion.getMachineVersion())){
-                System.out.println("508");
-                matrix = new MultiFormatWriter().encode(new String(str.getBytes("GBK"),"ISO-8859-1"),
-                        BarcodeFormat.QR_CODE, 200, 200);
-            }else {
-                System.out.println("762");
-                matrix = new MultiFormatWriter().encode(new String(str.getBytes("GB2312"),"ISO-8859-1"),
-                        BarcodeFormat.QR_CODE, 200, 200);
+            if (settings.getString("Scannertype", "").equals("Barcode")) {
+                printerController.PrinterController_Linefeed();
+                if ("T001(Q)".equals(MachineVersion.getMachineVersion())){
+                    System.out.println("508");
+                    matrix = new MultiFormatWriter().encode(new String(str.getBytes("GBK"),"ISO-8859-1"),
+                            BarcodeFormat.CODE_128, 200, 100);
+                }else {
+                    System.out.println("762");
+                    matrix = new MultiFormatWriter().encode(new String(str.getBytes("GB2312"),"ISO-8859-1"),
+                            BarcodeFormat.CODE_128, 200, 100);
+                }
+            } else {
+                if ("T001(Q)".equals(MachineVersion.getMachineVersion())){
+                    System.out.println("508");
+                    matrix = new MultiFormatWriter().encode(new String(str.getBytes("GBK"),"ISO-8859-1"),
+                            BarcodeFormat.QR_CODE, 200, 200);
+                }else {
+                    System.out.println("762");
+                    matrix = new MultiFormatWriter().encode(new String(str.getBytes("GB2312"),"ISO-8859-1"),
+                            BarcodeFormat.QR_CODE, 200, 200);
+                }
             }
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -567,6 +581,8 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
                 }
             }
         }
+
+
         Bitmap bitmap = Bitmap.createBitmap(width, height,
                 Bitmap.Config.ARGB_8888);
         bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
@@ -673,6 +689,7 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
             hexList.add(sb.toString());
         }
         return hexList;
+
     }
 
     private String hexStr = "0123456789ABCDEF";
