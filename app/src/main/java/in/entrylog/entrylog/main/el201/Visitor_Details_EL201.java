@@ -58,6 +58,7 @@ import in.entrylog.entrylog.values.FunctionCalls;
 public class Visitor_Details_EL201 extends AppCompatActivity {
     public static final String PREFS_NAME = "MyPrefsFile";
     private static final int END_DLG = 6;
+    private static final int ERROR_DLG = 7;
     private PrinterController printerController = null;
     LinearLayout maincontent, checkoutlayout, checkoutuserlayout, emailayout, designationlayout, departmentlayout,
             purposelayout, housenolayout, flatnolayout, blocklayout, noofvisitorlayout, classlayout, sectionlayout,
@@ -297,7 +298,7 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
                 if (BuildManu.equals("LS888")) {
                     PrintingData();
                 } else {
-                    showdialog(END_DLG);
+                    showdialog(ERROR_DLG);
                 }
             }
         });
@@ -759,6 +760,21 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
                 });
                 AlertDialog endalert = endbuilder.create();
                 endalert.show();
+                break;
+
+            case ERROR_DLG:
+                AlertDialog.Builder errorbuilder = new AlertDialog.Builder(this);
+                errorbuilder.setTitle("Printing Details");
+                errorbuilder.setCancelable(false);
+                errorbuilder.setMessage("EL201 device will not support for your device, So you will not get a print in this device..");
+                errorbuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+                AlertDialog erroralert = errorbuilder.create();
+                erroralert.show();
                 break;
         }
     }

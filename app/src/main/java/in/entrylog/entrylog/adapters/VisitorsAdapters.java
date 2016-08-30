@@ -3,6 +3,7 @@ package in.entrylog.entrylog.adapters;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,6 +23,7 @@ import in.entrylog.entrylog.main.bluetooth.Visitor_Details_Bluetooth;
 import in.entrylog.entrylog.main.el101_102.Visitor_Details_EL101;
 import in.entrylog.entrylog.main.el201.Visitor_Details_EL201;
 import in.entrylog.entrylog.values.DetailsValue;
+import in.entrylog.entrylog.values.EL101_102;
 import in.entrylog.entrylog.values.FunctionCalls;
 
 /**
@@ -34,6 +36,7 @@ public class VisitorsAdapters extends RecyclerView.Adapter<VisitorsAdapters.Visi
     Context context;
     String ContextView, Organization_ID, CheckingUser, Device, PrinterType;
     FunctionCalls functionCalls = new FunctionCalls();
+    EL101_102 el101_102device = new EL101_102();
 
     public VisitorsAdapters(ArrayList<DetailsValue> arrayList, Context context, String contextview, String organization_ID,
                             String checkingUser, String device, String printertype) {
@@ -115,7 +118,7 @@ public class VisitorsAdapters extends RecyclerView.Adapter<VisitorsAdapters.Visi
                 if (PrinterType.equals("Bluetooth")) {
                     intent = new Intent(context, Visitor_Details_Bluetooth.class);
                 } else if (!PrinterType.equals("Bluetooth")) {
-                    if (Device.equals("EL101")) {
+                    if (el101_102device.EnablePrinter(true)) {
                         intent = new Intent(context, Visitor_Details_EL101.class);
                     } else {
                         intent = new Intent(context, Visitor_Details_EL201.class);

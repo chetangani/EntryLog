@@ -219,14 +219,6 @@ public class CheckoutVisitors_EL201 extends AppCompatActivity implements ZXingSc
         startActivity(intent);
     }
 
-    @Override
-    protected void onDestroy() {
-        /*if (mythread.isAlive()) {
-            mythread.interrupt();
-        }*/
-        super.onDestroy();
-    }
-
     private void createdialog(String Message, String Checkout) {
         AlertDialog.Builder builder = new AlertDialog.Builder(CheckoutVisitors_EL201.this);
         builder.setTitle("CheckOut Result");

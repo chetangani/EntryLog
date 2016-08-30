@@ -52,6 +52,7 @@ import in.entrylog.entrylog.main.services.PrintingService;
 import in.entrylog.entrylog.main.services.StaffService;
 import in.entrylog.entrylog.serialprinter.SerialPrinter;
 import in.entrylog.entrylog.values.DetailsValue;
+import in.entrylog.entrylog.values.EL101_102;
 import in.entrylog.entrylog.values.FunctionCalls;
 import in.entrylog.entrylog.values.IMEIFunctionCalls;
 
@@ -72,10 +73,11 @@ public class BlocksActivity extends AppCompatActivity {
     Thread logoutthread, updatethread;
     DetailsValue detailsValue;
     private boolean manualcheckoutbtn = false, addvisitorsbtn = false, visitorsbtn = false, checkoutbtn = false,
-            updatefound = false, appdownloaded = false;
+            updatefound = false, appdownloaded = false, el101_enabled = false;
     static ProgressDialog dialog = null;
     FunctionCalls functionCalls;
     IMEIFunctionCalls imeiFunctionCalls;
+    EL101_102 el101_102device;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,11 +100,14 @@ public class BlocksActivity extends AppCompatActivity {
         detailsValue = new DetailsValue();
         functionCalls = new FunctionCalls();
         imeiFunctionCalls = new IMEIFunctionCalls();
+        el101_102device = new EL101_102();
 
         AddVisitors_btn = (Button) findViewById(R.id.addvisitors_btn);
         Visitors_btn = (Button) findViewById(R.id.visitors_btn);
         Checkout_btn = (Button) findViewById(R.id.checkout_btn);
         ManualCheckout_btn = (Button) findViewById(R.id.manually_checkout_btn);
+
+        el101_enabled = el101_102device.EnablePrinter(true);
 
         Intent service = new Intent(BlocksActivity.this, FieldsService.class);
         startService(service);
@@ -129,14 +134,27 @@ public class BlocksActivity extends AppCompatActivity {
                         addVisitors(AddVisitor_Bluetooth.class);
                     } else if (!settings.getString("Printertype", "").equals("Bluetooth")) {
                         if (settings.getString("Device", "").equals("EL101")) {
-                            Toast.makeText(BlocksActivity.this, "EL101", Toast.LENGTH_SHORT).show();
-                            addVisitors(AddVisitors_EL101.class);
+                            if (el101_enabled) {
+                                Toast.makeText(BlocksActivity.this, "EL101", Toast.LENGTH_SHORT).show();
+                                addVisitors(AddVisitors_EL101.class);
+                            } else {
+                                Toast.makeText(BlocksActivity.this, "EL101/102 device will not support for your device..",
+                                        Toast.LENGTH_SHORT).show();
+                            }
                         } else if (settings.getString("Device", "").equals("EL201")) {
-                            Toast.makeText(BlocksActivity.this, "EL201", Toast.LENGTH_SHORT).show();
-                            addVisitors(AddVisitors_EL201.class);
+                            if (Build.MANUFACTURER.equals("LS888")) {
+                                Toast.makeText(BlocksActivity.this, "EL201", Toast.LENGTH_SHORT).show();
+                                addVisitors(AddVisitors_EL201.class);
+                            } else {
+                                Toast.makeText(BlocksActivity.this, "EL201 device will not support for your device..",
+                                        Toast.LENGTH_SHORT).show();
+                            }
                         }/* else {
-                            addvisitorsbtn = true;
-                            showdialog(DEVICE_DLG);
+                            if (!el101_enabled) {
+                                if (!Build.MANUFACTURER.equals("LS888")) {
+                                    addVisitors(AddVisitors_EL201.class);
+                                }
+                            }
                         }*/
                     }
                 } else {
@@ -152,18 +170,10 @@ public class BlocksActivity extends AppCompatActivity {
                     if (settings.getString("Printertype", "").equals("")) {
                         checkoutbtn = true;
                         showdialog(DEVICE_DLG);
-                    } else if (settings.getString("Printertype", "").equals("Bluetooth")) {
-                        if (settings.getString("Device", "").equals("EL201")) {
-                            checkoutVisitors(CheckoutVisitors_EL201.class);
-                        } else {
-                            checkoutVisitors(CheckoutVisitors.class);
-                        }
-                    } else if (!settings.getString("Printertype", "").equals("Bluetooth")) {
-                        if (settings.getString("Device", "").equals("EL201")) {
-                            checkoutVisitors(CheckoutVisitors_EL201.class);
-                        } else {
-                            checkoutVisitors(CheckoutVisitors.class);
-                        }
+                    } else if (settings.getString("Device", "").equals("EL201")) {
+                        checkoutVisitors(CheckoutVisitors_EL201.class);
+                    } else {
+                        checkoutVisitors(CheckoutVisitors.class);
                     }
                 } else {
                     Toast.makeText(BlocksActivity.this, "Please Turn On Internet", Toast.LENGTH_SHORT).show();

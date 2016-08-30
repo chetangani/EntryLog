@@ -148,14 +148,6 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
         startActivity(intent);
     }
 
-    @Override
-    protected void onDestroy() {
-        if (mythread.isAlive()) {
-            mythread.interrupt();
-        }
-        super.onDestroy();
-    }
-
     private void createdialog(String Message, String Checkout) {
         AlertDialog.Builder builder = new AlertDialog.Builder(CheckoutVisitors.this);
         builder.setTitle("CheckOut Result");
