@@ -19,6 +19,8 @@ public class ReceivingData {
 
     public static final String Image_Url = "http://www.tellservice.com/entrylog/visitor_images/";
     public static final String Apk_Url = "http://www.tellservice.com/entrylog/apk/";
+    /*public static final String Image_Url = "http://www.askdial.com/entrylog/visitor_images/";
+    public static final String Apk_Url = "http://www.askdial.com/entrylog/apk/";*/
 
     public void LoginDetails(String result, DetailsValue details) {
         Log.d("debug", result);

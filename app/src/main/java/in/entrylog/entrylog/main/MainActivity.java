@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.devkit.api.Misc;
 import android.os.Build;
 import android.os.Handler;
 import android.support.v7.app.AlertDialog;
@@ -83,6 +84,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if(Misc.nativeReadMode()==0){
+            Misc.nativeUsbMode(1);
+        }
 
         settings = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         editor = settings.edit();
@@ -340,7 +345,7 @@ public class MainActivity extends AppCompatActivity {
                             editor.putString("Device", "EL201");
                         }
                         editor.commit();
-                        showtoast("Device: "+settings.getString("Device", ""));
+                        /*showtoast("Device: "+settings.getString("Device", ""));*/
                         RfidStatus = details.getRfidStatus();
                         if (DeviceModel.equals("El-201")) {
                             if (RfidStatus.equals("Enabled")) {

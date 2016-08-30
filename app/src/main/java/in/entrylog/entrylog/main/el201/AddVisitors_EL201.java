@@ -1173,7 +1173,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
             for (int i = 0; i < arrayList.size(); i++) {
                 String value = arrayList.get(i).toString();
                 LogStatus("Value["+i+"]: "+value);
-                if (value.equals("Email")) {
+                if (value.equals("Visitor Email")) {
                     emailLayout.setVisibility(View.VISIBLE);
                     emailLayout.setHint("Email Address");
                 }

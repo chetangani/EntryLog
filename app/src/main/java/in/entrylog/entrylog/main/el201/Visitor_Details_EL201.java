@@ -788,7 +788,7 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
         if (arrayList.size() > 0) {
             for (int i = 0; i < arrayList.size(); i++) {
                 String value = arrayList.get(i).toString();
-                if (value.equals("Email")) {
+                if (value.equals("Visitor Email")) {
                     emailayout.setVisibility(View.VISIBLE);
                     tv_email.setText(Email);
                 }
