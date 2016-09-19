@@ -57,7 +57,6 @@ public class MainActivity extends AppCompatActivity {
     TextView tv_version;
     String Orgid = "", User = "", Password = "", Login = "", OverNightTime="", OTPAccess, ImageAccess, Printertype,
             Scannertype, RfidStatus, DeviceModel, Cameratype;
-    CheckBox password_box;
     ConnectingTask task;
     DetailsValue details;
     Thread mythread, permissionthread;
@@ -85,9 +84,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        if(Misc.nativeReadMode()==0){
+        /*if(Misc.nativeReadMode()==0){
             Misc.nativeUsbMode(1);
-        }
+        }*/
 
         settings = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         editor = settings.edit();
@@ -101,8 +100,6 @@ public class MainActivity extends AppCompatActivity {
         user_etTxt = (EditText) findViewById(R.id.userid_etTxt);
         pass_etTxt = (EditText) findViewById(R.id.password_etTxt);
         tv_version = (TextView) findViewById(R.id.version_txt);
-
-        password_box = (CheckBox) findViewById(R.id.password_box);
 
         mProgressBar = findViewById(R.id.login_progress);
 
@@ -136,20 +133,6 @@ public class MainActivity extends AppCompatActivity {
             Intent login = new Intent(MainActivity.this, BlocksActivity.class);
             startActivityForResult(login, REQUEST_FOR_ACTIVITY_CODE);
         }
-
-        password_box.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    pass_etTxt.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
-                    pass_etTxt.setSelection(pass_etTxt.getText().length());
-                }
-                else {
-                    pass_etTxt.setTransformationMethod(PasswordTransformationMethod.getInstance());
-                    pass_etTxt.setSelection(pass_etTxt.getText().length());
-                }
-            }
-        });
 
         btn_login.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -345,14 +328,11 @@ public class MainActivity extends AppCompatActivity {
                             editor.putString("Device", "EL201");
                         }
                         editor.commit();
-                        /*showtoast("Device: "+settings.getString("Device", ""));*/
                         RfidStatus = details.getRfidStatus();
-                        if (DeviceModel.equals("El-201")) {
-                            if (RfidStatus.equals("Enabled")) {
-                                editor.putString("RFID", "true");
-                            } else {
-                                editor.putString("RFID", "false");
-                            }
+                        if (RfidStatus.equals("Enabled")) {
+                            editor.putString("RFID", "true");
+                        } else {
+                            editor.putString("RFID", "false");
                         }
                         editor.commit();
                         showtoast("RFID: "+settings.getString("RFID", ""));
@@ -438,9 +418,6 @@ public class MainActivity extends AppCompatActivity {
             pass_etTxt.setText("");
             pass_etTxt.setEnabled(false);
             orgid_etTxt.requestFocus();
-            if (password_box.isChecked()) {
-                password_box.setChecked(false);
-            }
         } else {
             OverNightTime = settings.getString("OverNightTime", "");
             if (!OverNightTime.equals("")) {
@@ -453,9 +430,6 @@ public class MainActivity extends AppCompatActivity {
             pass_etTxt.setText("");
             pass_etTxt.setEnabled(true);
             orgid_etTxt.requestFocus();
-            if (password_box.isChecked()) {
-                password_box.setChecked(false);
-            }
         }
     }
 
@@ -650,9 +624,6 @@ public class MainActivity extends AppCompatActivity {
                         orgid_etTxt.setText("");
                         pass_etTxt.setText("");
                         orgid_etTxt.requestFocus();
-                        if (password_box.isChecked()) {
-                            password_box.setChecked(false);
-                        }
                     }
                 });
                 AlertDialog existalert = existbuilder.create();
@@ -672,9 +643,6 @@ public class MainActivity extends AppCompatActivity {
                         orgid_etTxt.setText("");
                         pass_etTxt.setText("");
                         orgid_etTxt.requestFocus();
-                        if (password_box.isChecked()) {
-                            password_box.setChecked(false);
-                        }
                     }
                 });
                 AlertDialog blockalert = blockbuilder.create();

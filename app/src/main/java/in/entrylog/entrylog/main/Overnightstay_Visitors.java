@@ -160,7 +160,7 @@ public class Overnightstay_Visitors extends AppCompatActivity {
                 break;
 
             case NOTIFY_DLG:
-                ringtone();
+                functionCalls.ringtone(Overnightstay_Visitors.this);
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle("Over Night Stay Visitors");
                 builder.setMessage("You have visitors who did not checkout in cut off time");
@@ -191,15 +191,5 @@ public class Overnightstay_Visitors extends AppCompatActivity {
             nightstaythread.interrupt();
         }
         super.onDestroy();
-    }
-
-    public void ringtone(){
-        try {
-            Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-            Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
-            r.play();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 }

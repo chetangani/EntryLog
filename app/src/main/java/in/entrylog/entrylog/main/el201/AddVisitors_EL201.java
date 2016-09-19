@@ -11,7 +11,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.ExifInterface;
@@ -23,7 +22,6 @@ import android.nfc.NfcManager;
 import android.nfc.Tag;
 import android.nfc.tech.Ndef;
 import android.nfc.tech.NdefFormatable;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Parcelable;
@@ -34,7 +32,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Base64;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -56,19 +53,6 @@ import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.squareup.picasso.Picasso;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.util.EntityUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -93,7 +77,7 @@ import in.entrylog.entrylog.database.DataBase;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
 import in.entrylog.entrylog.dataposting.ConnectingTask.MobileAutoSuggest;
 import in.entrylog.entrylog.dataposting.ConnectingTask.SMSOTP;
-import in.entrylog.entrylog.main.el101_102.AddVisitors_EL101;
+import in.entrylog.entrylog.dataposting.DataAPI;
 import in.entrylog.entrylog.main.services.FieldsService;
 import in.entrylog.entrylog.main.services.PrintingService;
 import in.entrylog.entrylog.main.services.StaffService;
@@ -101,7 +85,9 @@ import in.entrylog.entrylog.main.services.Updatedata;
 import in.entrylog.entrylog.util.ImageProcessing;
 import in.entrylog.entrylog.values.DataPrinting;
 import in.entrylog.entrylog.values.DetailsValue;
+import in.entrylog.entrylog.values.EL201;
 import in.entrylog.entrylog.values.FunctionCalls;
+import in.entrylog.entrylog.values.SmartCardAdapter;
 
 public class AddVisitors_EL201 extends AppCompatActivity {
     public static final String PREFS_NAME = "MyPrefsFile";
@@ -130,16 +116,14 @@ public class AddVisitors_EL201 extends AppCompatActivity {
             format, Visitor_Designation="", Department="", Purpose="", House_number="", Flat_number="", Block="", No_Visitor="",
             aClass="", Section="", Student_Name="", ID_Card="", Visitor_Entry="", BuildManu="";
     int codevalue, digits;
-    static String Mobile = "", Visitors_id;
+    static String Mobile = "";
     ConnectingTask task;
     DetailsValue details;
-    ArrayList<String> fieldslist, fieldvalues;
-    Thread mythread, bluetooththread, scanningthread, mobilesuggestthread;
+    Thread mobilesuggestthread;
     static ProgressDialog dialog = null;
     boolean Visitorsimage = false, textfileready = false, imageprinting = false, barcodeprinting = false, reprint = false,
             writeNFC = false, otpcheck = false, manualcheck = false, otpresent = false, nfcavailable = false,
             mobilesuggestsuccess = false;
-    static boolean completed = false;
     View mProgressBar;
     DataBase dataBase;
     NfcAdapter nfcAdapter;
@@ -152,12 +136,13 @@ public class AddVisitors_EL201 extends AppCompatActivity {
     FieldsService fieldsService;
     StaffService staffService;
     PrintingService printingService;
+    EL201 el201device;
     TextInputLayout Til_field1, Til_field2, Til_field3, Til_field4, Til_field5, Til_field6, Til_field7, Til_field8,
             Til_field9, Til_field10, Til_field11, emailLayout;
     EditText Et_field1, Et_field2, Et_field3, Et_field4, Et_field5, Et_field6, Et_field7, Et_field8, Et_field9,
             Et_field10, Et_field11, etmobile;
     ArrayAdapter<String> Staffadapter;
-    static ArrayList<String> stafflist, printingorder, printingdisplay;
+    static ArrayList<String> stafflist, printingdisplay;
     int otpcount = 0;
 
     @Override
@@ -193,6 +178,9 @@ public class AddVisitors_EL201 extends AppCompatActivity {
         fieldsService = new FieldsService();
         staffService = new StaffService();
         printingService = new PrintingService();
+        if (BuildManu.equals("LS888")) {
+            el201device = new EL201(printerController, settings);
+        }
 
         dataBase = new DataBase(this);
         dataBase.open();
@@ -386,7 +374,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                                     PrintingData();
                                 } else {
                                     showdialog(END_DLG);
-                                    showToast("This Device is not suitable to get print details..");
+                                    functionCalls.showToast(AddVisitors_EL201.this, "This Device is not suitable to get print details..");
                                 }
                             } else {
                                 Toast.makeText(AddVisitors_EL201.this, "Please take a Photo of Visitor", Toast.LENGTH_SHORT).show();
@@ -419,9 +407,9 @@ public class AddVisitors_EL201 extends AppCompatActivity {
             printerController.PrinterController_PrinterLanguage(0);
             printerController.PrinterController_Font_Times();
             printerController.PrinterController_Set_Center();
-            printString(OrganizationPath);
+            el201device.printString(OrganizationPath);
             printerController.PrinterController_Font_Normal_mode();
-            printString(HeaderPath);
+            el201device.printString(HeaderPath);
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -446,7 +434,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                     barcodeprinting = true;
                     new Thread() {
                         public void run() {
-                            stringtocode(BarCodeValue);
+                            el201device.stringtocode(BarCodeValue);
                         };
                     }.start();
                 }
@@ -461,7 +449,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                     printerController.PrinterController_PrinterLanguage(0);
                     printerController.PrinterController_Set_Left();
                     printerController.PrinterController_Font_Normal_mode();
-                    printString(DataPath);
+                    el201device.printString(DataPath);
                     printerController.PrinterController_Take_The_Paper(1);
                 }
             }, 4000);
@@ -520,7 +508,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                             SMSOTP smsotp = task.new SMSOTP("91"+Mobile, settings.getString("OTP", ""));
                             smsotp.execute();
                             showdialog(OTP_DLG);
-                            showToast("OTP Sent");
+                            functionCalls.showToast(AddVisitors_EL201.this, "OTP Sent");
                         } else if (manualcheck) {
                             manualcheck = false;
                             AddVisitors_EL201.this.getWindow().setSoftInputMode(WindowManager.LayoutParams.
@@ -543,7 +531,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                             SMSOTP smsotp = task.new SMSOTP("91"+Mobile, settings.getString("OTP", ""));
                             smsotp.execute();
                             showdialog(OTP_DLG);
-                            showToast("OTP Sent");
+                            functionCalls.showToast(AddVisitors_EL201.this, "OTP Sent");
                         } else if (manualcheck) {
                             manualcheck = false;
                             AddVisitors_EL201.this.getWindow().setSoftInputMode(WindowManager.LayoutParams.
@@ -647,7 +635,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
             final Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath(),
                     options);
             photo_img.setImageBitmap(rotateImage(bitmap, fileUri.getPath()));
-            LogStatus("Image Size: "+sizeOf(bitmap));
+            functionCalls.LogStatus("Image Size: "+sizeOf(bitmap));
             UpdateVisitorImage = "Yes";
             Visitorsimage = true;
         } catch (NullPointerException e) {
@@ -662,7 +650,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
             final Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath(),
                     options);
             photo_img.setImageBitmap(rotateImage(bitmap, fileUri.getPath()));
-            LogStatus("Image Size: "+sizeOf(bitmap));
+            functionCalls.LogStatus("Image Size: "+sizeOf(bitmap));
             UpdateVisitorImage = "Yes";
             Visitorsimage = true;
         }
@@ -824,11 +812,9 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                     }
                     if (Display.equals("Email")) {
                         myOutWriter.append(Email + "\r\n");
-                        /*printString(Display+": "+Email+"\n");*/
                     }
                     if (Display.equals("Vehicle Number")) {
                         myOutWriter.append(Vehicleno + "\r\n");
-                        /*printString(Display+": "+Vehicleno+"\n");*/
                     }
                 }
             }
@@ -965,7 +951,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                             PrintingData();
                         } else {
                             showdialog(END_DLG);
-                            showToast("This Device is not suitable to get print details..");
+                            functionCalls.showToast(AddVisitors_EL201.this, "This Device is not suitable to get print details..");
                         }
                     }
                 });
@@ -1044,7 +1030,8 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                             } else {
                                 otpetTxt.setError("Entered OTP is not matching please enter correct one..");
                                 otpetTxt.setText("");
-                                showToast("Entered OTP is not matching please enter correct one..");
+                                functionCalls.showToast(AddVisitors_EL201.this,
+                                        "Entered OTP is not matching please enter correct one..");
                                 new Handler().postDelayed(new Runnable() {
                                     @Override
                                     public void run() {
@@ -1054,7 +1041,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                             }
                         } else {
                             otpetTxt.setError("Please enter OTP");
-                            showToast("Please enter OTP");
+                            functionCalls.showToast(AddVisitors_EL201.this, "Please enter OTP");
                             new Handler().postDelayed(new Runnable() {
                                 @Override
                                 public void run() {
@@ -1094,15 +1081,12 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                             SMSOTP smsotp = task.new SMSOTP("91"+Mobile, settings.getString("OTP", ""));
                             smsotp.execute();
                             showdialog(OTP_DLG);
-                            showToast("OTP Resent");
+                            functionCalls.showToast(AddVisitors_EL201.this, "OTP Resent");
                         }
                     });
                 }
                 AlertDialog alert2 = otpbuilder.create();
                 alert2.show();
-                /*if (otpresent) {
-                    ((AlertDialog) alert2).getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(false);
-                }*/
                 break;
         }
     }
@@ -1120,7 +1104,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        showToast("Please Enter Valid Mobile Number");
+                        functionCalls.showToast(AddVisitors_EL201.this, "Please Enter Valid Mobile Number");
                         showdialog(START_DLG);
                     }
                 }, 1000);
@@ -1129,7 +1113,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    showToast("Enter Mobile Number");
+                    functionCalls.showToast(AddVisitors_EL201.this, "Enter Mobile Number");
                     showdialog(START_DLG);
                 }
             }, 1000);
@@ -1143,7 +1127,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
         address_et.setText(details.getVisitors_Address());
         tomeet_et.setText(details.getVisitors_tomeet());
         vehicle_et.setText(details.getVisitors_VehicleNo());
-        String Image_Url = "http://www.tellservice.com/entrylog/visitor_images/";
+        String Image_Url = DataAPI.Image_Url;
         String Image = details.getVisitors_Photo();
         String Image_Path = Image_Url + Image;
         Picasso.with(AddVisitors_EL201.this).load(Image_Path).into(photo_img);
@@ -1163,16 +1147,16 @@ public class AddVisitors_EL201 extends AppCompatActivity {
     }
 
     private void Extrafields() {
-        LogStatus("Fetch field Started");
+        functionCalls.LogStatus("Fetch field Started");
         HashSet<String> hashSet = new HashSet<>();
         hashSet = fieldsService.fieldset;
         ArrayList<String> arrayList = new ArrayList<>();
         arrayList.addAll(hashSet);
         if (arrayList.size() > 0) {
-            LogStatus("Size is more than 1");
+            functionCalls.LogStatus("Size is more than 1");
             for (int i = 0; i < arrayList.size(); i++) {
                 String value = arrayList.get(i).toString();
-                LogStatus("Value["+i+"]: "+value);
+                functionCalls.LogStatus("Value["+i+"]: "+value);
                 if (value.equals("Visitor Email")) {
                     emailLayout.setVisibility(View.VISIBLE);
                     emailLayout.setHint("Email Address");
@@ -1223,23 +1207,23 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                 }
             }
         } else {
-            LogStatus("No Fields Available");
-            showToast("No Fields Available");
+            functionCalls.LogStatus("No Fields Available");
+            functionCalls.showToast(AddVisitors_EL201.this, "No Fields Available");
         }
-        LogStatus("Staff field Started");
+        functionCalls.LogStatus("Staff field Started");
         HashSet<String> StaffSet = new HashSet<>();
         StaffSet = staffService.staffset;
         stafflist = new ArrayList<>();
         stafflist.addAll(StaffSet);
         if (stafflist.size() > 0) {
-            LogStatus("Staff list Available");
+            functionCalls.LogStatus("Staff list Available");
             Staffadapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, stafflist);
             tomeet_et.setAdapter(Staffadapter);
             Collections.sort(stafflist);
             Staffadapter.notifyDataSetChanged();
             tomeet_et.setThreshold(1);
         } else {
-            LogStatus("Staff list not Available");
+            functionCalls.LogStatus("Staff list not Available");
         }
     }
 
@@ -1282,249 +1266,10 @@ public class AddVisitors_EL201 extends AppCompatActivity {
         }
     }
 
-    private void LogStatus(String str) {
-        Log.d("debug", str);
-    }
-
-    private void showToast(String message) {
-        Toast.makeText(AddVisitors_EL201.this, message, Toast.LENGTH_SHORT).show();
-    }
-
-    public void printString(String str) {
-        String s1 = null;
-        try {
-            Log.d("debug", "Send Data Initialzing");
-            //Read and Display from text file and print
-            File myFile = new File(str);
-            Scanner reader = new Scanner(myFile);
-            while (reader.hasNextLine()) {
-                Log.d("debug", "OutputStream Started");
-                String s = reader.nextLine();
-                s1 = s + "\n";
-                Log.d("debug", s1);
-                printerController.PrinterController_Print(s1.getBytes());
-            }
-        } catch (IndexOutOfBoundsException e) {
-
-        } catch (NullPointerException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void stringtocode(String value) {
-        try {
-            printerController.PrinterController_PrinterLanguage(2);
-            Bitmap btm = Create2DCode(value);
-            if (0 == printerController.Write_Command(decodeBitmap(btm)))
-                System.out.println("printerController.Write_Commandok");
-            else {
-                System.out.println("printerController.Write_Commandno");
-            }
-            printerController.PrinterController_Linefeed();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private Bitmap Create2DCode(String str) throws WriterException {
-
-        BitMatrix matrix = null;
-        try {
-            if (settings.getString("Scannertype", "").equals("Barcode")) {
-                printerController.PrinterController_Linefeed();
-                if ("T001(Q)".equals(MachineVersion.getMachineVersion())){
-                    System.out.println("508");
-                    matrix = new MultiFormatWriter().encode(new String(str.getBytes("GBK"),"ISO-8859-1"),
-                            BarcodeFormat.CODE_128, 200, 100);
-                }else {
-                    System.out.println("762");
-                    matrix = new MultiFormatWriter().encode(new String(str.getBytes("GB2312"),"ISO-8859-1"),
-                            BarcodeFormat.CODE_128, 200, 100);
-                }
-            } else {
-                if ("T001(Q)".equals(MachineVersion.getMachineVersion())){
-                    System.out.println("508");
-                    matrix = new MultiFormatWriter().encode(new String(str.getBytes("GBK"),"ISO-8859-1"),
-                            BarcodeFormat.QR_CODE, 200, 200);
-                }else {
-                    System.out.println("762");
-                    matrix = new MultiFormatWriter().encode(new String(str.getBytes("GB2312"),"ISO-8859-1"),
-                            BarcodeFormat.QR_CODE, 200, 200);
-                }
-            }
-        } catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        int width = matrix.getWidth();
-        int height = matrix.getHeight();
-        int[] pixels = new int[width * height];
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                if (matrix.get(x, y)) {
-                    pixels[y * width + x] = 0xff000000;
-                } else {
-                    pixels[y * width + x] = 0xffffffff;
-                }
-            }
-        }
-
-
-        Bitmap bitmap = Bitmap.createBitmap(width, height,
-                Bitmap.Config.ARGB_8888);
-        bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
-        return bitmap;
-    }
-
-    private byte[] decodeBitmap(Bitmap bmp) {
-        int bmpWidth = bmp.getWidth();
-        int bmpHeight = bmp.getHeight();
-
-        List<String> list = new ArrayList<String>(); // binaryString list
-        StringBuffer sb;
-
-        @SuppressWarnings("unused")
-        int bitLen = bmpWidth / 8;
-        int zeroCount = bmpWidth % 8;
-        String zeroStr = "";
-        if (zeroCount > 0) {
-            bitLen = bmpWidth / 8 + 1;
-            for (int i = 0; i < (8 - zeroCount); i++) {
-                zeroStr = zeroStr + "0";
-            }
-        }
-        for (int i = 0; i < bmpHeight; i++) {
-            sb = new StringBuffer();
-            for (int j = 0; j < bmpWidth; j++) {
-                int color = bmp.getPixel(j, i);
-
-                int r = (color >> 16) & 0xff;
-                int g = (color >> 8) & 0xff;
-                int b = color & 0xff;
-
-                if (r > 160 && g > 160 && b > 160)
-                    sb.append("0");
-                else
-                    sb.append("1");
-            }
-            if (zeroCount > 0) {
-                sb.append(zeroStr);
-            }
-            list.add(sb.toString());
-        }
-        List<String> bmpHexList = binaryListToHexStringList(list);
-        String commandHexString = "1D763000";
-        String widthHexString = Integer
-                .toHexString(bmpWidth % 8 == 0 ? bmpWidth / 8
-                        : (bmpWidth / 8 + 1));
-        if (widthHexString.length() > 2) {
-            return null;
-        } else if (widthHexString.length() == 1) {
-            widthHexString = "0" + widthHexString;
-        }
-        widthHexString = widthHexString + "00";
-
-        String heightHexString = Integer.toHexString(bmpHeight);
-        if (heightHexString.length() > 2) {
-            return null;
-        } else if (heightHexString.length() == 1) {
-            heightHexString = "0" + heightHexString;
-        }
-        heightHexString = heightHexString + "00";
-
-        List<String> commandList = new ArrayList<String>();
-        commandList.add(commandHexString + widthHexString + heightHexString);
-        commandList.addAll(bmpHexList);
-        byte[] bytes = hexList2Byte(commandList);
-        return bytes;
-    }
-
-    private byte[] hexList2Byte(List<String> list) {
-
-        List<byte[]> commandList = new ArrayList<byte[]>();
-
-        for (String hexStr : list) {
-            commandList.add(hexStringToBytes(hexStr));
-        }
-        byte[] bytes = sysCopy(commandList);
-        return bytes;
-    }
-
-    private byte[] sysCopy(List<byte[]> srcArrays) {
-        int len = 0;
-        for (byte[] srcArray : srcArrays) {
-            len += srcArray.length;
-        }
-        byte[] destArray = new byte[len];
-        int destLen = 0;
-        for (byte[] srcArray : srcArrays) {
-            System.arraycopy(srcArray, 0, destArray, destLen, srcArray.length);
-            destLen += srcArray.length;
-        }
-        return destArray;
-    }
-
-    private List<String> binaryListToHexStringList(List<String> list) {
-        List<String> hexList = new ArrayList<String>();
-        for (String binaryStr : list) {
-            StringBuffer sb = new StringBuffer();
-            for (int i = 0; i < binaryStr.length(); i += 8) {
-                String str = binaryStr.substring(i, i + 8);
-                String hexString = myBinaryStrToHexString(str);
-                sb.append(hexString);
-            }
-            hexList.add(sb.toString());
-        }
-        return hexList;
-
-    }
-
-    private String hexStr = "0123456789ABCDEF";
-    private String[] binaryArray = { "0000", "0001", "0010", "0011", "0100",
-            "0101", "0110", "0111", "1000", "1001", "1010", "1011", "1100",
-            "1101", "1110", "1111" };
-
-    private String myBinaryStrToHexString(String binaryStr) {
-        String hex = "";
-        String f4 = binaryStr.substring(0, 4);
-        String b4 = binaryStr.substring(4, 8);
-        for (int i = 0; i < binaryArray.length; i++) {
-            if (f4.equals(binaryArray[i]))
-                hex += hexStr.substring(i, i + 1);
-        }
-        for (int i = 0; i < binaryArray.length; i++) {
-            if (b4.equals(binaryArray[i]))
-                hex += hexStr.substring(i, i + 1);
-        }
-
-        return hex;
-    }
-
-    private byte[] hexStringToBytes(String hexString) {
-        if (hexString == null || hexString.equals("")) {
-            return null;
-        }
-        hexString = hexString.toUpperCase();
-        int length = hexString.length() / 2;
-        char[] hexChars = hexString.toCharArray();
-        byte[] d = new byte[length];
-        for (int i = 0; i < length; i++) {
-            int pos = i * 2;
-            d[i] = (byte) (charToByte(hexChars[pos]) << 4 | charToByte(hexChars[pos + 1]));
-        }
-        return d;
-    }
-
-    private static byte charToByte(char c) {
-        return (byte) "0123456789ABCDEF".indexOf(c);
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
-        LogStatus("OnResume NFCAvailable: "+nfcavailable);
+        functionCalls.LogStatus("OnResume NFCAvailable: "+nfcavailable);
         if (nfcavailable) {
             enableForegroundDispatchSystem();
         }
@@ -1535,18 +1280,13 @@ public class AddVisitors_EL201 extends AppCompatActivity {
         super.onNewIntent(intent);
         if (intent.hasExtra(NfcAdapter.EXTRA_TAG)) {
             Toast.makeText(AddVisitors_EL201.this, "Smart Card Intent", Toast.LENGTH_SHORT).show();
-            if (!writeNFC) {
-                Parcelable[] parcelables = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
-                if (parcelables != null && parcelables.length > 0) {
-                    readTextFromMessage((NdefMessage) parcelables[0]);
-                } else {
-                    Toast.makeText(AddVisitors_EL201.this, "No Ndef Message Found", Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+            if (writeNFC) {
+                /*Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
                 NdefMessage ndefMessage = createNdefMessage(BarCodeValue);
 
-                writeNdefMessage(tag, ndefMessage);
+                writeNdefMessage(tag, ndefMessage);*/
+                SmartCardAdapter smartCardAdapter = new SmartCardAdapter();
+                smartCardAdapter.writeSmartTag(AddVisitors_EL201.this, intent, BarCodeValue);
             }
         }
     }
@@ -1556,99 +1296,5 @@ public class AddVisitors_EL201 extends AppCompatActivity {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
         IntentFilter[] intentFilters = new IntentFilter[] {};
         nfcAdapter.enableForegroundDispatch(this, pendingIntent, intentFilters, null);
-    }
-
-    private NdefMessage createNdefMessage(String content) {
-        NdefRecord ndefRecord = createTextRecord(content);
-        NdefMessage ndefMessage = new NdefMessage(new NdefRecord[]{ ndefRecord });
-        return ndefMessage;
-    }
-
-    private void writeNdefMessage(Tag tag, NdefMessage ndefMessage) {
-        try {
-            if (tag == null) {
-                Toast.makeText(AddVisitors_EL201.this, "Tag Object cannot be null", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            Ndef ndef = Ndef.get(tag);
-            if (ndef == null) {
-                formatTag(tag, ndefMessage);
-            } else {
-                ndef.connect();
-                if (!ndef.isWritable()) {
-                    Toast.makeText(AddVisitors_EL201.this, "Tag is not writable", Toast.LENGTH_SHORT).show();
-                    ndef.close();
-                    return;
-                }
-                ndef.writeNdefMessage(ndefMessage);
-                ndef.close();
-                Toast.makeText(AddVisitors_EL201.this, "Tag written", Toast.LENGTH_SHORT).show();
-                finish();
-            }
-        } catch (Exception e) {
-
-        }
-    }
-
-    private NdefRecord createTextRecord(String content) {
-        try {
-            byte[] language;
-            language = Locale.getDefault().getLanguage().getBytes("UTF-8");
-
-            final byte[] text = content.getBytes("UTF-8");
-            final int languageSize = language.length;
-            final int textLength = text.length;
-            final ByteArrayOutputStream payload = new ByteArrayOutputStream(1 + languageSize + textLength);
-
-            payload.write((byte) languageSize & 0x1F);
-            payload.write(language, 0, languageSize);
-            payload.write(text, 0, textLength);
-
-            return new NdefRecord(NdefRecord.TNF_WELL_KNOWN, NdefRecord.RTD_TEXT, new byte[0], payload.toByteArray());
-        } catch (UnsupportedEncodingException e) {
-
-        }
-        return null;
-    }
-
-    private void formatTag(Tag tag, NdefMessage ndefMessage) {
-        try {
-            NdefFormatable ndefFormatable = NdefFormatable.get(tag);
-            if (ndefFormatable == null) {
-                Toast.makeText(AddVisitors_EL201.this, "This is not ndef formatable", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            ndefFormatable.connect();
-            ndefFormatable.format(ndefMessage);
-            ndefFormatable.close();
-            Toast.makeText(AddVisitors_EL201.this, "Tag written", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-
-        }
-    }
-
-    public String getTextfromNdefRecord(NdefRecord ndefRecord) {
-        String tagContent = null;
-        try {
-            byte[] payload = ndefRecord.getPayload();
-            String textEncoding = ((payload[0] & 128) == 0) ? "UTF-8" : "UTF-16";
-            int languageSize = payload[0] & 0063;
-            tagContent = new String(payload, languageSize + 1, payload.length - languageSize - 1, textEncoding);
-        } catch (UnsupportedEncodingException e) {
-
-        }
-        return tagContent;
-    }
-
-    private void readTextFromMessage(NdefMessage ndefMessage) {
-        NdefRecord[] ndefRecords = ndefMessage.getRecords();
-        if (ndefRecords != null && ndefRecords.length > 0) {
-            NdefRecord ndefRecord = ndefRecords[0];
-            String tagcontent = getTextfromNdefRecord(ndefRecord);
-            Toast.makeText(AddVisitors_EL201.this, tagcontent, Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(AddVisitors_EL201.this, "No Ndef Records Found", Toast.LENGTH_SHORT).show();
-        }
     }
 }

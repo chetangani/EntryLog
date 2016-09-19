@@ -53,7 +53,6 @@
         <activity
             android:name=".main.el101_102.AddVisitors_EL101"
             android:icon="@mipmap/ic_entrylog_icon" />
-        <activity android:name=".main.CheckoutVisitors" />
         <activity android:name=".main.Visitors" />
 
         <service android:name=".myprinter.WorkService" />
@@ -74,7 +73,7 @@
         <activity android:name=".main.Overnightstay_Visitors" />
         <activity android:name=".main.el201.AddVisitors_EL201" />
         <activity android:name=".main.bluetooth.AddVisitor_Bluetooth" />
-        <activity android:name=".main.el201.CheckoutVisitors_EL201" />
+        <activity android:name=".main.CheckoutVisitors" />
         <activity android:name=".main.bluetooth.Visitor_Details_Bluetooth" />
         <activity android:name=".main.el201.Visitor_Details_EL201"></activity>
     </application>

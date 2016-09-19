@@ -53,7 +53,7 @@ public class EL201 {
         }
     }
 
-    private void stringtocode(String value) {
+    public void stringtocode(String value) {
         try {
             printerController.PrinterController_PrinterLanguage(2);
             Bitmap btm = Create2DCode(value);

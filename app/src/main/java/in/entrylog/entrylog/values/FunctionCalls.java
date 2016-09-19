@@ -5,13 +5,18 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.regex.Pattern;
 
@@ -29,6 +34,22 @@ public class FunctionCalls {
         if (!dir.exists()) {
             dir.mkdirs();
         }
+        String pathname = "" + dir;
+        return pathname;
+    }
+
+    public String apkfilepath() {
+        File dir = new File(android.os.Environment.getExternalStorageDirectory(), "EntrylogApk");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        String pathname = "" + dir;
+        return pathname;
+    }
+
+    public String checkapkfilepath(String value) {
+        File dir = new File(android.os.Environment.getExternalStorageDirectory(), "EntrylogApk"
+                + File.separator + value);
         String pathname = "" + dir;
         return pathname;
     }
@@ -161,6 +182,10 @@ public class FunctionCalls {
         }
     }
 
+    public void showToast(Context context, String message) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+    }
+
     public void LogStatus(String message) {
         Log.d("debug", message);
     }
@@ -214,5 +239,52 @@ public class FunctionCalls {
             return false;
         }
         return false;
+    }
+
+    public void ringtone(Context context){
+        try {
+            Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            Ringtone r = RingtoneManager.getRingtone(context.getApplicationContext(), notification);
+            r.play();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String CurrentDate() {
+        Calendar cal = Calendar.getInstance();
+        int curyear = cal.get(Calendar.YEAR);
+        int curmonth = cal.get(Calendar.MONTH);
+        int curdate = cal.get(Calendar.DAY_OF_MONTH);
+        String Currentdate = "" + curdate + "-" + "" + (curmonth + 1) + "-" + curyear;
+        Date Starttime = null;
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+        try {
+            Starttime = new SimpleDateFormat("dd-MM-yyyy").parse(Currentdate);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        String Date = sdf.format(Starttime);
+        return Date;
+    }
+
+    public String CurrentTime() {
+        Calendar cal = Calendar.getInstance();
+        int curhour = cal.get(Calendar.HOUR_OF_DAY);
+        int curminute = cal.get(Calendar.MINUTE);
+        String minute = "" + curminute;
+        if (minute.length() == 1) {
+            minute = "0" + minute;
+        }
+        String Currenttime = "" + curhour + ":" + minute;
+        Date Starttime = null;
+        SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a");
+        try {
+            Starttime = new SimpleDateFormat("HH:mm").parse(Currenttime);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        String Time = sdf.format(Starttime);
+        return Time;
     }
 }

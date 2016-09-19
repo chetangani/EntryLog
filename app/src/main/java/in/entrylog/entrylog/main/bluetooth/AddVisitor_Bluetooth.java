@@ -26,14 +26,17 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
@@ -62,6 +65,7 @@ import in.entrylog.entrylog.database.DataBase;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
 import in.entrylog.entrylog.dataposting.ConnectingTask.MobileAutoSuggest;
 import in.entrylog.entrylog.dataposting.ConnectingTask.SMSOTP;
+import in.entrylog.entrylog.dataposting.DataAPI;
 import in.entrylog.entrylog.main.services.FieldsService;
 import in.entrylog.entrylog.main.services.PrintingService;
 import in.entrylog.entrylog.main.services.StaffService;
@@ -105,7 +109,7 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
     static ProgressDialog dialog = null;
     boolean Visitorsimage = false, connetedsocket = false, textfileready = false, submitpressed = false, devicefound = false,
             scanningstarted = false, connectingdevice = false, devicenamenotfound = false, pairingstarted = false, reprint = false,
-            scanningregistered = false, otpcheck = false, manualcheck = false, otpresent = false;
+            scanningregistered = false, otpcheck = false, manualcheck = false, otpresent = false, mobilesuggestsuccess = false;
     static boolean qrcodeprinted = false, btconnected = false, completed = false, deviceconnected = false, devicenotconnected = false;
     static BluetoothAdapter mBluetoothAdapter;
     OutputStream mmOutputStream;
@@ -298,6 +302,18 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                         Toast.makeText(AddVisitor_Bluetooth.this, "Please turn On Bluetooth Device", Toast.LENGTH_SHORT).show();
                     }
                 }
+            }
+        });
+
+        tomeet_et.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+                boolean handled = false;
+                if (i == EditorInfo.IME_ACTION_NEXT) {
+                    vehicle_et.requestFocus();
+                    handled = true;
+                }
+                return handled;
             }
         });
     }
@@ -534,9 +550,25 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                         details.setMobileAutoSuggestSuccess(false);
                         Successview();
                         Extrafields();
-                        AddVisitor_Bluetooth.this.getWindow().setSoftInputMode(WindowManager.LayoutParams.
-                                SOFT_INPUT_STATE_ALWAYS_HIDDEN);
-                        addvisitorslayout.setVisibility(View.VISIBLE);
+                        mobilesuggestsuccess = true;
+                        if (otpcheck) {
+                            otpcheck = false;
+                            Random rand = new Random();
+                            int num = rand.nextInt(9000) + 1000;
+                            editor.putString("OTP", ""+num+" ");
+                            editor.commit();
+                            SMSOTP smsotp = task.new SMSOTP("91"+Mobile, settings.getString("OTP", ""));
+                            smsotp.execute();
+                            showdialog(OTP_DLG);
+                            showToast("OTP Sent");
+                        } else if (manualcheck) {
+                            manualcheck = false;
+                            AddVisitor_Bluetooth.this.getWindow().setSoftInputMode(WindowManager.LayoutParams.
+                                    SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+                            addvisitorslayout.setVisibility(View.VISIBLE);
+                            mobile_et.setText(Mobile);
+                            name_et.requestFocus();
+                        }
                         mobilesuggestthread.interrupt();
                     }
                     if (details.isMobileAutoSuggestFailure()) {
@@ -1119,6 +1151,15 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                             checkmobilesuggest(etmobile);
                         }
                     });
+                } else {
+                    builder.setPositiveButton("MANUAL", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Visitor_Entry = "2";
+                            manualcheck = true;
+                            checkmobilesuggest(etmobile);
+                        }
+                    });
                 }
                 builder.setNeutralButton("CANCEL", new DialogInterface.OnClickListener() {
                     @Override
@@ -1195,9 +1236,15 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                             String OTP = otpetTxt.getText().toString();
                             String SavedOTP = settings.getString("OTP", "");
                             if (OTP.equals(SavedOTP)) {
-                                addvisitorslayout.setVisibility(View.VISIBLE);
-                                mobile_et.setText(Mobile);
-                                name_et.requestFocus();
+                                if (mobilesuggestsuccess) {
+                                    AddVisitor_Bluetooth.this.getWindow().setSoftInputMode(WindowManager.LayoutParams.
+                                            SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+                                    addvisitorslayout.setVisibility(View.VISIBLE);
+                                } else {
+                                    addvisitorslayout.setVisibility(View.VISIBLE);
+                                    mobile_et.setText(Mobile);
+                                    name_et.requestFocus();
+                                }
                             } else {
                                 otpetTxt.setError("Entered OTP is not matching please enter correct one..");
                                 otpetTxt.setText("");
@@ -1233,8 +1280,13 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                         public void onClick(DialogInterface dialog, int which) {
                             Visitor_Entry = "2";
                             addvisitorslayout.setVisibility(View.VISIBLE);
-                            mobile_et.setText(Mobile);
-                            name_et.requestFocus();
+                            if (mobilesuggestsuccess) {
+                                AddVisitor_Bluetooth.this.getWindow().setSoftInputMode(WindowManager.LayoutParams.
+                                        SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+                            } else {
+                                mobile_et.setText(Mobile);
+                                name_et.requestFocus();
+                            }
                         }
                     });
                 } else {
@@ -1295,7 +1347,7 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
         address_et.setText(details.getVisitors_Address());
         tomeet_et.setText(details.getVisitors_tomeet());
         vehicle_et.setText(details.getVisitors_VehicleNo());
-        String Image_Url = "http://www.tellservice.com/entrylog/visitor_images/";
+        String Image_Url = DataAPI.Image_Url;
         String Image = details.getVisitors_Photo();
         String Image_Path = Image_Url + Image;
         Picasso.with(AddVisitor_Bluetooth.this).load(Image_Path).error(R.drawable.blankperson).into(photo_img);

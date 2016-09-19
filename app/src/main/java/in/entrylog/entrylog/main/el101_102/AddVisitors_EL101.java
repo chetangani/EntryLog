@@ -1,26 +1,28 @@
 package in.entrylog.entrylog.main.el101_102;
 
 import android.annotation.TargetApi;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.devkit.api.Misc;
-import android.devkit.api.SerialPort;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.drawable.BitmapDrawable;
 import android.media.ExifInterface;
 import android.net.Uri;
-import android.os.AsyncTask;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.nfc.NfcManager;
+import android.nfc.Tag;
+import android.nfc.tech.Ndef;
+import android.nfc.tech.NdefFormatable;
 import android.os.Build;
-import android.os.Environment;
 import android.os.Handler;
-import android.os.Message;
 import android.provider.MediaStore;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AlertDialog;
@@ -28,7 +30,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Base64;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -45,22 +46,8 @@ import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.util.EntityUtils;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -72,30 +59,24 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Random;
-import java.util.Scanner;
 
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.database.DataBase;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
 import in.entrylog.entrylog.dataposting.ConnectingTask.MobileAutoSuggest;
 import in.entrylog.entrylog.dataposting.ConnectingTask.SMSOTP;
+import in.entrylog.entrylog.dataposting.DataAPI;
 import in.entrylog.entrylog.main.services.FieldsService;
 import in.entrylog.entrylog.main.services.PrintingService;
 import in.entrylog.entrylog.main.services.StaffService;
 import in.entrylog.entrylog.main.services.Updatedata;
-import in.entrylog.entrylog.myprinter.Global;
-import in.entrylog.entrylog.myprinter.WorkService;
-import in.entrylog.entrylog.util.ArrayUtil;
-import in.entrylog.entrylog.util.Encoder;
-import in.entrylog.entrylog.util.FileUtil;
-import in.entrylog.entrylog.util.HexDump;
-import in.entrylog.entrylog.util.ImageProcessing;
-import in.entrylog.entrylog.util.PrintPic;
-import in.entrylog.entrylog.util.Printer;
 import in.entrylog.entrylog.values.DataPrinting;
 import in.entrylog.entrylog.values.DetailsValue;
+import in.entrylog.entrylog.values.EL101_102;
 import in.entrylog.entrylog.values.FunctionCalls;
+import in.entrylog.entrylog.values.SmartCardAdapter;
 
 public class AddVisitors_EL101 extends AppCompatActivity {
     public static final String PREFS_NAME = "MyPrefsFile";
@@ -103,92 +84,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
     private static final int END_DLG = 6;
     private static final int MOBILE_DLG = 7;
     private static final int OTP_DLG = 8;
-    private static boolean printing = false;
-    static final int MSG_SUCCESS = 1;
-    static final int MSG_FAIL = 2;
-    static final int MSG_RECV = 3;
-    static final int MSG_DRAW_TXT = 4;
-    static final int SendCommand = 5;
-    static final int PAPER_TEST = 6;
-    static final int FEED = 7;
-
-    private final int WORDNUM = 32;  //limit words in one line
-    private final int WIDTH = 384;   //max image width
-
-    String configCom = "/dev/ttyVK1";
-
-    static byte[] recvBuf;
-
-    long begin;
-
-    SerialPort mSerialPort;
-
-    static int recStatus = -1;
-
-    static int printerStatus = 0;
-
-    static Handler timehandler = new Handler();
-
-    Runnable timerunnable = new Runnable() {
-
-        @Override
-        public void run() {
-            int size = recvBuf.length;
-            if (size == 0) {
-                String vstrMsg = "Recv uart data time out !";
-                mHandler.obtainMessage(MSG_DRAW_TXT, vstrMsg).sendToTarget();
-            } else {
-                mHandler.obtainMessage(MSG_RECV, recvBuf).sendToTarget();
-            }
-        }
-    };
-
-    Handler mHandler = new Handler() {
-
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MSG_RECV:
-                    timehandler.removeCallbacks(timerunnable);
-                    String temp1 = bytetoASCIIString((byte[]) msg.obj);
-                    String temp = HexDump.dumpHex((byte[]) msg.obj);
-                    LogStatus("Recv: " + temp);
-                    LogStatus("Recv1: " + temp1);
-                    if (temp.equals("0x20")) {
-                        printerStatus = -1;
-                        LogStatus("Recv: No Paper");
-                    }
-                    if (temp.equals("0x00")) {
-                        printerStatus = 0;
-                        LogStatus("Recv: OK");
-                    }
-                    if (recStatus == 1) {
-                        Toast.makeText(AddVisitors_EL101.this, "Ver: " + temp, Toast.LENGTH_SHORT).show();
-                        recStatus = -1;
-                    }
-                    recvBuf = new byte[0];
-                    break;
-                case MSG_DRAW_TXT:
-                    LogStatus((String) msg.obj);
-                    break;
-
-                case SendCommand:
-                    System.out.println("printerStatus:" + printerStatus);
-                    if (printerStatus == 0) {
-                        SendCommad((byte[]) msg.obj);
-                    }
-                    break;
-
-                case FEED:    //feed paper one line	    0-255
-                    SendCommad(new byte[]{0x1b, 0x64, -125});
-                    break;
-
-                case PAPER_TEST:  //test whether no paper
-                    SendCommad(new byte[]{0x10, 0x04, 0x02});
-                    break;
-
-            }
-        }
-    };
+    private static final int NFC_DLG = 9;
 
     private static final int CAMERA_CAPTURE_IMAGE_REQUEST_CODE = 100;
     public static final int MEDIA_TYPE_IMAGE = 1;
@@ -197,7 +93,6 @@ public class AddVisitors_EL101 extends AppCompatActivity {
 
     private static Uri fileUri; // file url to store image/video
     static File mediaFile;
-    /*private static Handler mHandler = null;*/
 
     EditText name_et, email_et, mobile_et, address_et, vehicle_et;
     AutoCompleteTextView tomeet_et;
@@ -209,31 +104,34 @@ public class AddVisitors_EL101 extends AppCompatActivity {
             BarCodeValue="", format, Visitor_Designation="", Department="", Purpose="", House_number="", Flat_number="",
             Block="", No_Visitor="", aClass="", Section="", Student_Name="", ID_Card="", Visitor_Entry="";
     int codevalue, digits;
-    static String Mobile = "", Visitors_id;
+    static String Mobile = "";
     ConnectingTask task;
     DetailsValue details;
     ArrayList<DetailsValue> fieldvalues;
-    Thread mythread, mobilesuggestthread;
+    Thread mobilesuggestthread;
     static ProgressDialog dialog = null;
-    boolean Visitorsimage = false, textfileready = false, imageprinting = false, barcodeprinting = false, reprint = false,
-            otpcheck = false, manualcheck = false, otpresent = false, mobilesuggestsuccess = false;
-    static boolean completed = false;
+    boolean Visitorsimage = false, barcodeprinting = false, reprint = false, writeNFC = false, otpcheck = false,
+            manualcheck = false, otpresent = false, mobilesuggestsuccess = false, nfcavailable = false;
     View mProgressBar;
     DataBase dataBase;
     SharedPreferences settings;
     SharedPreferences.Editor editor;
+    AlertDialog nfcdialog;
     FunctionCalls functionCalls;
     DataPrinting dataPrinting;
     FieldsService fieldsService;
     StaffService staffService;
-    PrintingService printingService;
+    EL101_102 el101_102device;
     TextInputLayout Til_field1, Til_field2, Til_field3, Til_field4, Til_field5, Til_field6, Til_field7, Til_field8,
             Til_field9, Til_field10, Til_field11, emailLayout;
     EditText Et_field1, Et_field2, Et_field3, Et_field4, Et_field5, Et_field6, Et_field7, Et_field8, Et_field9,
             Et_field10, Et_field11, etmobile;
     ArrayAdapter<String> Staffadapter;
-    static ArrayList<String> stafflist, printingorder, printingdisplay;
+    static ArrayList<String> stafflist;
     int otpcount = 0;
+    NfcAdapter nfcAdapter;
+    NfcManager nfcManager;
+    StringBuilder printdetails;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -250,7 +148,8 @@ public class AddVisitors_EL101 extends AppCompatActivity {
 
         fieldsService = new FieldsService();
         staffService = new StaffService();
-        printingService = new PrintingService();
+        el101_102device = new EL101_102();
+        printdetails = new StringBuilder();
 
         dataBase = new DataBase(this);
         dataBase.open();
@@ -263,8 +162,8 @@ public class AddVisitors_EL101 extends AppCompatActivity {
         settings = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         editor = settings.edit();
 
-        LogStatus("Enabling Printer");
-        EnableBtn(true);
+        functionCalls.LogStatus("Enabling Printer");
+        el101_102device.EnableBtn(true);
 
         name_et = (EditText) findViewById(R.id.name_EtTxt);
         email_et = (EditText) findViewById(R.id.email_EtTxt);
@@ -277,6 +176,16 @@ public class AddVisitors_EL101 extends AppCompatActivity {
             photo_img.setVisibility(View.GONE);
         }
         submit_btn = (Button) findViewById(R.id.submit_btn);
+
+        if (settings.getString("RFID", "").equals("true")) {
+            nfcManager = (NfcManager) getSystemService(Context.NFC_SERVICE);
+            nfcAdapter = nfcManager.getDefaultAdapter();
+            if (nfcAdapter != null && nfcAdapter.isEnabled()) {
+                nfcavailable = true;
+                Toast.makeText(AddVisitors_EL101.this, "NFC Enabled" +"\n"+ "NFC Available: "+nfcavailable
+                        +"\n"+ "WRITERFID: "+writeNFC, Toast.LENGTH_SHORT).show();
+            }
+        }
 
         emailLayout = (TextInputLayout) findViewById(R.id.email_Til);
         Til_field1 = (TextInputLayout) findViewById(R.id.field1_Til);
@@ -390,12 +299,6 @@ public class AddVisitors_EL101 extends AppCompatActivity {
         });
     }
 
-    @Override
-    protected void onResume() {
-        fieldvalues = new ArrayList<DetailsValue>();
-        super.onResume();
-    }
-
     private void CheckInDetails() {
         Name = name_et.getText().toString();
         if (!name_et.getText().toString().equals("")) {
@@ -425,11 +328,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                                             UpdateVisitorImage, Visitor_Designation, Department, Purpose, House_number,
                                             Flat_number, Block, No_Visitor, aClass, Section, Student_Name, ID_Card,
                                             settings.getString("Device", ""), Visitor_Entry);
-                                }/*
-                                dataPrinting.SaveOrganization(OrganizationName);
-                                dataPrinting.SaveHeader();
-                                PrintData();
-                                dataPrinting.SaveEmpty();*/
+                                }
                                 functionCalls.LogStatus("Update Data Service: "+settings.getString("UpdateData", ""));
                                 if (!settings.getString("UpdateData", "").equals("Running")) {
                                     Log.d("debug", "Service Started");
@@ -459,43 +358,39 @@ public class AddVisitors_EL101 extends AppCompatActivity {
 
     private void PrintingData() {
         dialog = ProgressDialog.show(AddVisitors_EL101.this, "", "Updating file...", true);
-        Log.d("debug", "Saving Text");
-        /*dataPrinting.SaveOrganization(OrganizationName);
-        dataPrinting.SaveHeader();
-        SaveData();
-        dataPrinting.SaveEmpty();*/
         Log.d("debug", "Printing Header");
-        SendCommad(new byte[]{0x1d, 0x21, 0x01});
-        SendCommad(new byte[]{0x1b, 0x61, 0x01});
-        /*printString(OrganizationPath);*/
-        printString(OrganizationName);
-        SendCommad(new byte[]{0x1d, 0x21, 0x00});
-        SendCommad(new byte[]{0x1d, 0x21, 0x00});
-        SendCommad(new byte[]{0x1d, 0x21, 0x00});
-        /*printString(HeaderPath);*/
-        printString("VISITOR");
+        el101_102device.SendCommad(new byte[]{0x1d, 0x21, 0x01});
+        el101_102device.SendCommad(new byte[]{0x1b, 0x61, 0x01});
+        printdetails.append(OrganizationName);
+        el101_102device.printString(""+printdetails);
+        printdetails.delete(0, printdetails.length());
+        el101_102device.SendCommad(new byte[]{0x1d, 0x21, 0x00});
+        el101_102device.SendCommad(new byte[]{0x1d, 0x21, 0x00});
+        el101_102device.SendCommad(new byte[]{0x1d, 0x21, 0x00});
+        printdetails.append("VISITOR");
+        el101_102device.printString(""+printdetails);
+        printdetails.delete(0, printdetails.length());
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 Log.d("debug", "Printing Image");
-                imageprinting = true;
-                PrintHumanImage(photo_img);
+                el101_102device.imageprinting = true;
+                el101_102device.PrintHumanImage(photo_img);
             }
         }, 1500);
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 Log.d("debug", "Printing BarCode");
-                if (imageprinting) {
-                    imageprinting = false;
+                if (el101_102device.imageprinting) {
+                    el101_102device.imageprinting = false;
                 }
-                /*printString(EmptyPath);*/
                 if (settings.getString("Scannertype", "").equals("Barcode")) {
-                    printString("   "+"\n");
+                    el101_102device.printString("   "+"\n");
                     barcodeprinting = true;
-                    printBarCode(BarCodeValue);
+                    el101_102device.printBarCode(BarCodeValue);
                 } else {
-                    printQRcode(195, BarCodeValue);
+                    el101_102device.printQRcode(195, BarCodeValue);
                 }
             }
         }, 4000);
@@ -505,24 +400,23 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                 Log.d("debug", "Printing Header");
                 if (barcodeprinting) {
                     barcodeprinting = false;
-                    printString("   "+"\n");
+                    el101_102device.printString("   "+"\n");
                 }
-                /*printString(EmptyPath);*/
-                SendCommad(new byte[]{0x1b, 0x61, 0x00});
-                SendCommad(new byte[]{0x1b, 0x61, 0x00});
-                SendCommad(new byte[]{0x1b, 0x61, 0x00});
-                PrintData();
-                printString("   "+"\n");
-                printString("   "+"\n");
-                /*printString(DataPath);
-                printString(EmptyPath);
-                printString(EmptyPath);*/
+                el101_102device.SendCommad(new byte[]{0x1b, 0x61, 0x00});
+                el101_102device.SendCommad(new byte[]{0x1b, 0x61, 0x00});
+                el101_102device.SendCommad(new byte[]{0x1b, 0x61, 0x00});
+                el101_102device.SaveData(printdetails, Name, Mobile, FromAddress, ToMeet, DateTime, Visitor_Designation,
+                        Department, Purpose, House_number, Flat_number, Block, No_Visitor, aClass, Section, Student_Name,
+                        ID_Card, User, Email, Vehicleno, reprint);
+                el101_102device.printString(""+printdetails);
+                el101_102device.printString("   "+"\n");
             }
         }, 6000);
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 dialog.dismiss();
+                printdetails.delete(0, printdetails.length());
                 showdialog(END_DLG);
             }
         }, 7500);
@@ -569,7 +463,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                             editor.commit();
                             SMSOTP smsotp = task.new SMSOTP("91"+Mobile, settings.getString("OTP", ""));
                             smsotp.execute();
-                            showToast("OTP Sent");
+                            functionCalls.showToast(AddVisitors_EL101.this, "OTP Sent");
                             showdialog(OTP_DLG);
                         } else if (manualcheck) {
                             manualcheck = false;
@@ -592,7 +486,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                             editor.commit();
                             SMSOTP smsotp = task.new SMSOTP("91"+Mobile, settings.getString("OTP", ""));
                             smsotp.execute();
-                            showToast("OTP Sent");
+                            functionCalls.showToast(AddVisitors_EL101.this, "OTP Sent");
                             showdialog(OTP_DLG);
                         } else if (manualcheck) {
                             manualcheck = false;
@@ -700,7 +594,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
 
             final Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath(), options);
             photo_img.setImageBitmap(rotateImage(bitmap, fileUri.getPath()));
-            LogStatus("Image Size: "+sizeOf(bitmap));
+            functionCalls.LogStatus("Image Size: "+sizeOf(bitmap));
             UpdateVisitorImage = "Yes";
             Visitorsimage = true;
         } catch (NullPointerException e) {
@@ -714,7 +608,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
 
             final Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath(), options);
             photo_img.setImageBitmap(rotateImage(bitmap, fileUri.getPath()));
-            LogStatus("Image Size: "+sizeOf(bitmap));
+            functionCalls.LogStatus("Image Size: "+sizeOf(bitmap));
             UpdateVisitorImage = "Yes";
             Visitorsimage = true;
         }
@@ -793,390 +687,18 @@ public class AddVisitors_EL101 extends AppCompatActivity {
         return mediaFile;
     }
 
-    public String compressImage(String imageUri) {
-
-        String filePath = imageUri;
-        Bitmap scaledBitmap = null;
-
-        BitmapFactory.Options options = new BitmapFactory.Options();
-
-//      by setting this field as true, the actual bitmap pixels are not loaded in the memory. Just the bounds are loaded. If
-//      you try the use the bitmap here, you will get null.
-        options.inJustDecodeBounds = true;
-        Bitmap bmp = BitmapFactory.decodeFile(filePath, options);
-
-        int actualHeight = options.outHeight;
-        int actualWidth = options.outWidth;
-
-//      max Height and width values of the compressed image is taken as 816x612
-
-        float maxHeight = 816.0f;
-        float maxWidth = 612.0f;
-        float imgRatio = actualWidth / actualHeight;
-        float maxRatio = maxWidth / maxHeight;
-
-//      width and height values are set maintaining the aspect ratio of the image
-
-        if (actualHeight > maxHeight || actualWidth > maxWidth) {
-            if (imgRatio < maxRatio) {
-                imgRatio = maxHeight / actualHeight;
-                actualWidth = (int) (imgRatio * actualWidth);
-                actualHeight = (int) maxHeight;
-            } else if (imgRatio > maxRatio) {
-                imgRatio = maxWidth / actualWidth;
-                actualHeight = (int) (imgRatio * actualHeight);
-                actualWidth = (int) maxWidth;
-            } else {
-                actualHeight = (int) maxHeight;
-                actualWidth = (int) maxWidth;
-
-            }
-        }
-
-//      setting inSampleSize value allows to load a scaled down version of the original image
-
-        options.inSampleSize = calculateInSampleSize(options, actualWidth, actualHeight);
-
-//      inJustDecodeBounds set to false to load the actual bitmap
-        options.inJustDecodeBounds = false;
-
-//      this options allow android to claim the bitmap memory if it runs low on memory
-        options.inPurgeable = true;
-        options.inInputShareable = true;
-        options.inTempStorage = new byte[16 * 1024];
-
-        try {
-//          load the bitmap from its path
-            bmp = BitmapFactory.decodeFile(filePath, options);
-        } catch (OutOfMemoryError exception) {
-            exception.printStackTrace();
-
-        }
-        try {
-            scaledBitmap = Bitmap.createBitmap(actualWidth, actualHeight, Bitmap.Config.ARGB_8888);
-        } catch (OutOfMemoryError exception) {
-            exception.printStackTrace();
-        }
-
-        float ratioX = actualWidth / (float) options.outWidth;
-        float ratioY = actualHeight / (float) options.outHeight;
-        float middleX = actualWidth / 2.0f;
-        float middleY = actualHeight / 2.0f;
-
-        Matrix scaleMatrix = new Matrix();
-        scaleMatrix.setScale(ratioX, ratioY, middleX, middleY);
-
-        Canvas canvas = new Canvas(scaledBitmap);
-        canvas.setMatrix(scaleMatrix);
-        canvas.drawBitmap(bmp, middleX - bmp.getWidth() / 2, middleY - bmp.getHeight() / 2, new Paint(Paint.FILTER_BITMAP_FLAG));
-
-//      check the rotation of the image and display it properly
-        ExifInterface exif;
-        try {
-            exif = new ExifInterface(filePath);
-
-            int orientation = exif.getAttributeInt(
-                    ExifInterface.TAG_ORIENTATION, 0);
-            Log.d("EXIF", "Exif: " + orientation);
-            Matrix matrix = new Matrix();
-            if (orientation == 6) {
-                matrix.postRotate(90);
-                Log.d("EXIF", "Exif: " + orientation);
-            } else if (orientation == 3) {
-                matrix.postRotate(180);
-                Log.d("EXIF", "Exif: " + orientation);
-            } else if (orientation == 8) {
-                matrix.postRotate(270);
-                Log.d("EXIF", "Exif: " + orientation);
-            }
-            scaledBitmap = Bitmap.createBitmap(scaledBitmap, 0, 0,
-                    scaledBitmap.getWidth(), scaledBitmap.getHeight(), matrix,
-                    true);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        FileOutputStream out = null;
-        String filename = mediaFile.getPath();
-        try {
-            out = new FileOutputStream(filename);
-
-//          write the compressed bitmap at the destination specified by filename.
-            scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 80, out);
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        return filename;
-
-    }
-
-    public int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
-        final int height = options.outHeight;
-        final int width = options.outWidth;
-        int inSampleSize = 1;
-
-        if (height > reqHeight || width > reqWidth) {
-            final int heightRatio = Math.round((float) height / (float) reqHeight);
-            final int widthRatio = Math.round((float) width / (float) reqWidth);
-            inSampleSize = heightRatio < widthRatio ? heightRatio : widthRatio;
-        }
-        final float totalPixels = width * height;
-        final float totalReqPixelsCap = reqWidth * reqHeight * 2;
-        while (totalPixels / (inSampleSize * inSampleSize) > totalReqPixelsCap) {
-            inSampleSize++;
-        }
-
-        return inSampleSize;
-    }
-
-    public void PrintData() {
-
-        String path = functionCalls.filepath("Textfile");
-        String filename = "Data.txt";
-        try {
-            File f = new File(path + File.separator + filename);
-            FileOutputStream fOut = new FileOutputStream(f);
-            OutputStreamWriter myOutWriter = new OutputStreamWriter(fOut);
-
-            HashSet<String> Printdisplay = new HashSet<>();
-            Printdisplay = printingService.printingset;
-            printingdisplay = new ArrayList<>();
-            printingdisplay.addAll(Printdisplay);
-            Collections.sort(printingdisplay);
-            if (printingdisplay.size() > 0) {
-                functionCalls.LogStatus("Printing Display Size: "+printingdisplay.size());
-                for (int i = 0; i < printingdisplay.size(); i++) {
-                    String PrintOrder = printingdisplay.get(i).toString();
-                    functionCalls.LogStatus("Print Order: "+PrintOrder);
-                    String Display = PrintOrder.substring(2, PrintOrder.length());
-                    functionCalls.LogStatus("Display: "+Display);
-                    /*myOutWriter.append(Display+": ");
-                    if (Display.equals("Name")) {
-                        myOutWriter.append(Name + "\r\n");*//*
-                        printString(Display+": "+Name+"\n");*//*
-                    }
-                    if (Display.equals("Mobile")) {
-                        myOutWriter.append(Mobile + "\r\n");*//*
-                        printString(Display+": "+Mobile+"\n");*//*
-                    }
-                    if (Display.equals("From")) {
-                        myOutWriter.append(FromAddress + "\r\n");*//*
-                        printString(Display+": "+FromAddress+"\n");*//*
-                    }
-                    if (Display.equals("To Meet")) {
-                        myOutWriter.append(ToMeet + "\r\n");*//*
-                        printString(Display+": "+ToMeet+"\n");*//*
-                    }
-                    if (Display.equals("Date")) {
-                        if (!reprint) {
-                            DateTime = CurrentDate() + " " + CurrentTime() + "\r\n";
-                            myOutWriter.append(DateTime);*//*
-                            printString(Display+": "+DateTime+"\n");*//*
-                        } else {
-                            myOutWriter.append(DateTime);*//*
-                            printString(Display+": "+DateTime+"\n");*//*
-                        }
-                    }
-                    if (Display.equals("Visitor Designation")) {
-                        myOutWriter.append(Visitor_Designation + "\r\n");*//*
-                        printString(Display+": "+Visitor_Designation+"\n");*//*
-                    }
-                    if (Display.equals("Department")) {
-                        myOutWriter.append(Department + "\r\n");*//*
-                        printString(Display+": "+Department+"\n");*//*
-                    }
-                    if (Display.equals("Purpose")) {
-                        myOutWriter.append(Purpose + "\r\n");*//*
-                        printString(Display+": "+Purpose+"\n");*//*
-                    }
-                    if (Display.equals("House No")) {
-                        myOutWriter.append(House_number + "\r\n");*//*
-                        printString(Display+": "+House_number+"\n");*//*
-                    }
-                    if (Display.equals("Flat No")) {
-                        myOutWriter.append(Flat_number + "\r\n");
-                        *//*printString(Display+": "+Flat_number+"\n");*//*
-                    }
-                    if (Display.equals("Block")) {
-                        myOutWriter.append(Block + "\r\n");*//*
-                        printString(Display+": "+Block+"\n");*//*
-                    }
-                    if (Display.equals("No of Visitor")) {
-                        myOutWriter.append(No_Visitor + "\r\n");*//*
-                        printString(Display+": "+No_Visitor+"\n");*//*
-                    }
-                    if (Display.equals("Class")) {
-                        myOutWriter.append(aClass + "\r\n");
-                        *//*printString(Display+": "+aClass+"\n");*//*
-                    }
-                    if (Display.equals("Section")) {
-                        myOutWriter.append(Section + "\r\n");
-                        *//*printString(Display+": "+Section+"\n");*//*
-                    }
-                    if (Display.equals("Student")) {
-                        myOutWriter.append(Student_Name + "\r\n");*//*
-                        printString(Display+": "+Student_Name+"\n");*//*
-                    }
-                    if (Display.equals("Id Card")) {
-                        myOutWriter.append(ID_Card + "\r\n");*//*
-                        printString(Display+": "+ID_Card+"\n");*//*
-                    }
-                    if (Display.equals("Entry")) {
-                        myOutWriter.append(User + "\r\n");*//*
-                        printString(Display+": "+User+"\n");*//*
-                    }
-                    if (Display.equals("Email")) {
-                        myOutWriter.append(Email + "\r\n");
-                        *//*printString(Display+": "+Email+"\n");*//*
-                    }
-                    if (Display.equals("Vehicle Number")) {
-                        myOutWriter.append(Vehicleno + "\r\n");
-                        *//*printString(Display+": "+Vehicleno+"\n");*//*
-                    }*/
-                    /*myOutWriter.append(Display+": ");*/
-                    if (Display.equals("Name")) {
-                        /*myOutWriter.append(Name + "\r\n");*/
-                        printString(Display+": "+Name/*+"\n"*/);
-                    }
-                    if (Display.equals("Mobile")) {
-                        /*myOutWriter.append(Mobile + "\r\n");*/
-                        printString(Display+": "+Mobile/*+"\n"*/);
-                    }
-                    if (Display.equals("From")) {
-                        /*myOutWriter.append(FromAddress + "\r\n");*/
-                        printString(Display+": "+FromAddress/*+"\n"*/);
-                    }
-                    if (Display.equals("To Meet")) {
-                        /*myOutWriter.append(ToMeet + "\r\n");*/
-                        printString(Display+": "+ToMeet/*+"\n"*/);
-                    }
-                    if (Display.equals("Date")) {
-                        if (!reprint) {
-                            DateTime = CurrentDate() + " " + CurrentTime()/* + "\r\n"*/;
-                            /*myOutWriter.append(DateTime);*/
-                            printString(Display+": "+DateTime/*+"\n"*/);
-                        } else {
-                            /*myOutWriter.append(DateTime);*/
-                            printString(Display+": "+DateTime/*+"\n"*/);
-                        }
-                    }
-                    if (Display.equals("Visitor Designation")) {
-                        /*myOutWriter.append(Visitor_Designation + "\r\n");*/
-                        printString(Display+": "+Visitor_Designation/*+"\n"*/);
-                    }
-                    if (Display.equals("Department")) {
-                        /*myOutWriter.append(Department + "\r\n");*/
-                        printString(Display+": "+Department/*+"\n"*/);
-                    }
-                    if (Display.equals("Purpose")) {
-                        /*myOutWriter.append(Purpose + "\r\n");*/
-                        printString(Display+": "+Purpose/*+"\n"*/);
-                    }
-                    if (Display.equals("House No")) {
-                        /*myOutWriter.append(House_number + "\r\n");*/
-                        printString(Display+": "+House_number/*+"\n"*/);
-                    }
-                    if (Display.equals("Flat No")) {
-                        /*myOutWriter.append(Flat_number + "\r\n");*/
-                        printString(Display+": "+Flat_number/*+"\n"*/);
-                    }
-                    if (Display.equals("Block")) {
-                        /*myOutWriter.append(Block + "\r\n");*/
-                        printString(Display+": "+Block/*+"\n"*/);
-                    }
-                    if (Display.equals("No of Visitor")) {
-                        /*myOutWriter.append(No_Visitor + "\r\n");*/
-                        printString(Display+": "+No_Visitor/*+"\n"*/);
-                    }
-                    if (Display.equals("Class")) {
-                        /*myOutWriter.append(aClass + "\r\n");*/
-                        printString(Display+": "+aClass/*+"\n"*/);
-                    }
-                    if (Display.equals("Section")) {
-                        /*myOutWriter.append(Section + "\r\n");*/
-                        printString(Display+": "+Section/*+"\n"*/);
-                    }
-                    if (Display.equals("Student")) {
-                        /*myOutWriter.append(Student_Name + "\r\n");*/
-                        printString(Display+": "+Student_Name/*+"\n"*/);
-                    }
-                    if (Display.equals("Id Card")) {
-                        /*myOutWriter.append(ID_Card + "\r\n");*/
-                        printString(Display+": "+ID_Card/*+"\n"*/);
-                    }
-                    if (Display.equals("Entry")) {
-                        /*myOutWriter.append(User + "\r\n");*/
-                        printString(Display+": "+User/*+"\n"*/);
-                    }
-                    if (Display.equals("Email")) {
-                        /*myOutWriter.append(Email + "\r\n");*/
-                        printString(Display+": "+Email/*+"\n"*/);
-                    }
-                    if (Display.equals("Vehicle Number")) {
-                        /*myOutWriter.append(Vehicleno + "\r\n");*/
-                        printString(Display+": "+Vehicleno/*+"\n"*/);
-                    }
-                }
-            }
-            /*myOutWriter.append(" " + "\r\n");
-            myOutWriter.close();
-            fOut.close();*/
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     protected void onDestroy() {
-        timehandler.removeCallbacks(timerunnable);
-        if (mSerialPort != null)
-            mSerialPort.close();
-        mSerialPort = null;
-        EnableBtn(false);
+        el101_102device.timehandler.removeCallbacks(el101_102device.timerunnable);
+        if (el101_102device.mSerialPort != null)
+            el101_102device.mSerialPort.close();
+        el101_102device.mSerialPort = null;
+        el101_102device.EnableBtn(false);
         functionCalls.deleteTextfile("Organization.txt");
         functionCalls.deleteTextfile("Header.txt");
         functionCalls.deleteTextfile("Empty.txt");
         functionCalls.deleteTextfile("Data.txt");
         super.onDestroy();
-    }
-
-    private String CurrentDate() {
-        Calendar cal = Calendar.getInstance();
-        int curyear = cal.get(Calendar.YEAR);
-        int curmonth = cal.get(Calendar.MONTH);
-        int curdate = cal.get(Calendar.DAY_OF_MONTH);
-        String Currentdate = "" + curdate + "/" + "" + (curmonth + 1) + "/" + curyear;
-        Date Starttime = null;
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-        try {
-            Starttime = new SimpleDateFormat("dd/MM/yyyy").parse(Currentdate);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        String Date = sdf.format(Starttime);
-        return Date;
-    }
-
-    private String CurrentTime() {
-        Calendar cal = Calendar.getInstance();
-        int curhour = cal.get(Calendar.HOUR_OF_DAY);
-        int curminute = cal.get(Calendar.MINUTE);
-        String minute = "" + curminute;
-        if (minute.length() == 1) {
-            minute = "0" + minute;
-        }
-        String Currenttime = "" + curhour + ":" + minute;
-        Date Starttime = null;
-        SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a");
-        try {
-            Starttime = new SimpleDateFormat("HH:mm").parse(Currenttime);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        String Time = sdf.format(Starttime);
-        return Time;
     }
 
     private void showdialog(int id) {
@@ -1250,7 +772,12 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                 endbuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        finish();
+                        if (nfcavailable) {
+                            writeNFC = true;
+                            showdialog(NFC_DLG);
+                        } else {
+                            finish();
+                        }
                     }
                 });
                 endbuilder.setNegativeButton("REPRINT", new DialogInterface.OnClickListener() {
@@ -1262,6 +789,22 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                 });
                 AlertDialog endalert = endbuilder.create();
                 endalert.show();
+                break;
+
+            case NFC_DLG:
+                AlertDialog.Builder nfcbuilder = new AlertDialog.Builder(this);
+                nfcbuilder.setTitle("Write Smart Card");
+                nfcbuilder.setCancelable(false);
+                nfcbuilder.setMessage("Please take a Smart Card Tag to write a data on it...");
+                nfcbuilder.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        finish();
+                    }
+                });
+                nfcdialog = nfcbuilder.create();
+                nfcdialog.show();
                 break;
 
             case MOBILE_DLG:
@@ -1319,7 +862,8 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                             } else {
                                 otpetTxt.setError("Entered OTP is not matching please enter correct one..");
                                 otpetTxt.setText("");
-                                showToast("Entered OTP is not matching please enter correct one..");
+                                functionCalls.showToast(AddVisitors_EL101.this,
+                                        "Entered OTP is not matching please enter correct one..");
                                 new Handler().postDelayed(new Runnable() {
                                     @Override
                                     public void run() {
@@ -1329,7 +873,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                             }
                         } else {
                             otpetTxt.setError("Please enter OTP");
-                            showToast("Please enter OTP");
+                            functionCalls.showToast(AddVisitors_EL101.this, "Please enter OTP");
                             new Handler().postDelayed(new Runnable() {
                                 @Override
                                 public void run() {
@@ -1370,7 +914,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                             SMSOTP smsotp = task.new SMSOTP("91"+Mobile, settings.getString("OTP", ""));
                             smsotp.execute();
                             showdialog(OTP_DLG);
-                            showToast("OTP Resent");
+                            functionCalls.showToast(AddVisitors_EL101.this, "OTP Resent");
                         }
                     });
                 }
@@ -1396,7 +940,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        showToast("Please Enter Valid Mobile Number");
+                        functionCalls.showToast(AddVisitors_EL101.this, "Please Enter Valid Mobile Number");
                         showdialog(START_DLG);
                     }
                 }, 1000);
@@ -1405,7 +949,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    showToast("Enter Mobile Number");
+                    functionCalls.showToast(AddVisitors_EL101.this, "Enter Mobile Number");
                     showdialog(START_DLG);
                 }
             }, 1000);
@@ -1419,7 +963,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
         address_et.setText(details.getVisitors_Address());
         tomeet_et.setText(details.getVisitors_tomeet());
         vehicle_et.setText(details.getVisitors_VehicleNo());
-        String Image_Url = "http://www.tellservice.com/entrylog/visitor_images/";
+        String Image_Url = DataAPI.Image_Url;
         String Image = details.getVisitors_Photo();
         String Image_Path = Image_Url + Image;
         Picasso.with(AddVisitors_EL101.this).load(Image_Path).into(photo_img);
@@ -1439,16 +983,16 @@ public class AddVisitors_EL101 extends AppCompatActivity {
     }
 
     private void Extrafields() {
-        LogStatus("Fetch field Started");
+        functionCalls.LogStatus("Fetch field Started");
         HashSet<String> hashSet = new HashSet<>();
         hashSet = fieldsService.fieldset;
         ArrayList<String> arrayList = new ArrayList<>();
         arrayList.addAll(hashSet);
         if (arrayList.size() > 0) {
-            LogStatus("Size is more than 1");
+            functionCalls.LogStatus("Size is more than 1");
             for (int i = 0; i < arrayList.size(); i++) {
                 String value = arrayList.get(i).toString();
-                LogStatus("Value["+i+"]: "+value);
+                functionCalls.LogStatus("Value["+i+"]: "+value);
                 if (value.equals("Visitor Email")) {
                     emailLayout.setVisibility(View.VISIBLE);
                     emailLayout.setHint("Email Address");
@@ -1499,23 +1043,23 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                 }
             }
         } else {
-            LogStatus("No Fields Available");
-            showToast("No Fields Available");
+            functionCalls.LogStatus("No Fields Available");
+            functionCalls.showToast(AddVisitors_EL101.this, "No Fields Available");
         }
-        LogStatus("Staff field Started");
+        functionCalls.LogStatus("Staff field Started");
         HashSet<String> StaffSet = new HashSet<>();
         StaffSet = staffService.staffset;
         stafflist = new ArrayList<>();
         stafflist.addAll(StaffSet);
         if (stafflist.size() > 0) {
-            LogStatus("Staff list Available");
+            functionCalls.LogStatus("Staff list Available");
             Staffadapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, stafflist);
             tomeet_et.setAdapter(Staffadapter);
             Collections.sort(stafflist);
             Staffadapter.notifyDataSetChanged();
             tomeet_et.setThreshold(1);
         } else {
-            LogStatus("Staff list not Available");
+            functionCalls.LogStatus("Staff list not Available");
         }
     }
 
@@ -1558,484 +1102,36 @@ public class AddVisitors_EL101 extends AppCompatActivity {
         }
     }
 
-    private void showToast(String message) {
-        Toast.makeText(AddVisitors_EL101.this, message, Toast.LENGTH_SHORT).show();
-    }
-
-    public void SendCommad(byte[] order) {
-        if (mSerialPort != null) {
-            try {
-                if (imageprinting) {
-                    if (!(order.length == 3)) {
-                        recvBuf = new byte[0];
-                        mSerialPort.getOutputStream().write(order);
-                        if (order.length < 200) {
-                            // too much message show will affect the UI
-                        } else {
-                        }
-                    }
-                } else {
-                    recvBuf = new byte[0];
-                    mSerialPort.getOutputStream().write(order);
-                    if (order.length < 200) {
-                        // too much message show will affect the UI
-                    } else {
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-        } else {
+    @Override
+    protected void onResume() {
+        fieldvalues = new ArrayList<DetailsValue>();
+        super.onResume();
+        functionCalls.LogStatus("OnResume NFCAvailable: "+nfcavailable);
+        if (nfcavailable) {
+            enableForegroundDispatchSystem();
         }
     }
 
-    private static String bytetoASCIIString(byte[] bytearray) {
-        String result = "";
-        char temp;
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.hasExtra(NfcAdapter.EXTRA_TAG)) {
+            Toast.makeText(AddVisitors_EL101.this, "Smart Card Intent", Toast.LENGTH_SHORT).show();
+            if (writeNFC) {
+                /*Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+                NdefMessage ndefMessage = createNdefMessage(BarCodeValue);
 
-        int length = bytearray.length;
-        for (int i = 0; i < length; i++) {
-            temp = (char) bytearray[i];
-            result += temp;
-        }
-        return result;
-    }
-
-    public void printBarCode(String str){
-
-    	/*
-    	set barCode height   area 1-255  default 162
-    	byte[] barHeight=new byte[]{0x1d,0x68,162-256};
-    	SendCommad(barHeight);
-        */
-
-    	 /*
-    	 //set barCode width area  2-6  default 3
-    	 byte[] barWidth=new byte[]{0x1d,0x77,0x02};
-    	 SendCommad(barWidth);
-    	 */
-        //set HRI character postion
-        //0:no  1:up   2:below    3:both up and below
-        byte[] hri=new byte[]{0x1d,0x48,0x00};
-        SendCommad(hri);
-        //set align center
-        SendCommad(new byte[]{0x1b,0x61,0x01});
-
-        /**
-         * code type
-         * UPC-A    65
-         * UPC-E    66
-         * JAN13    67
-         * JAN8     68
-         * code39   69   0x45
-         * ITF      70
-         * codabar  71
-         * code93   72
-         * code128  73
-         */
-
-
-        byte[] head=new byte[]{0x1d,0x6b,0x48,(byte)str.length()};
-
-        byte[] body=ArrayUtil.stringToBytes(str, str.length());
-        byte[] total=ArrayUtil.MergerArray(head, body);
-        // total=ArrayUtil.MergerArray(total, new byte[]{0x0A,0x1b,0x4a,0x30});
-        // byte[] test=new byte[]{0x1e,0x42,0x34,0x50,0x32,0x30,0x0a,0x31,0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x41,0x42,0x0a};
-
-        // mHandler.sendEmptyMessageDelayed(0x16, 200);
-        SendCommad(total);
-
-
-        //add HRI text
-        /*
-        try {
-        	 SendCommad(new byte[]{0x1b,0x64,6});
-			SendCommad(addEnter(str.getBytes("GB2312")));
-			//set align left
-			SendCommad(new byte[]{0x1b,0x61,0x00});
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
-        */
-        //feed paper
-        /*mHandler.sendEmptyMessageDelayed(FEED, 100);
-        //return printer status
-        mHandler.sendEmptyMessageDelayed(PAPER_TEST, 200);*/
-    }
-
-    public void printString(String str) {
-        if((str!=null)&&(str.getBytes().length!=0)){
-            byte[] send = null;
-            try {
-                //send = addEnter(str.getBytes("ISO8859-16"));
-                //??????????? ????GBK2312,?????????UTF-8 ,?????????iso859-16
-                //If want to print Chinese character use "GBK2312", others use "UTF-8";
-                send = addEnter(str.getBytes("GB2312"));
-                //send = str.getBytes("utf-8");
-            }catch (Exception e) {
-                e.printStackTrace();
-            }
-            SendCommad(send);
-            //Message msg=Message.obtain();
-            //msg.what=SendCommand;
-            //msg.obj=send;
-            //mHandler.sendMessageDelayed(msg,450);
-        }
-        /*String s1 = null;
-        try {
-            Log.d("debug", "Send Data Initialzing");
-            //Read and Display from text file and print
-            File myFile = new File(str);
-            Scanner reader = new Scanner(myFile);
-            while (reader.hasNextLine()) {
-                Log.d("debug", "OutputStream Started");
-                String s = reader.nextLine();
-                s1 = s;
-                Log.d("debug", s1);
-                if ((s1 != null) && (s1.getBytes().length != 0)) {
-                    byte[] send = null;
-                    try {
-                        //send = addEnter(str.getBytes("ISO8859-16"));
-                        //??????????? ????GBK2312,?????????UTF-8 ,?????????iso859-16
-                        //If want to print Chinese character use "GBK2312", others use "UTF-8";
-                        send = addEnter(s1.getBytes("GB2312"));
-                        //send = str.getBytes("utf-8");
-                    } catch (UnsupportedEncodingException e) {
-                        e.printStackTrace();
-                    }
-                    SendCommad(send);
-                }
-            }
-        } catch (IndexOutOfBoundsException e) {
-
-        } catch (NullPointerException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
-    }
-
-    public byte[] addEnter(byte[] buf) {
-        int i;
-        byte[] bufret = new byte[buf.length + 1];
-
-        for (i = 0; i < buf.length; i++) {
-
-            bufret[i] = buf[i];
-        }
-        bufret[bufret.length - 1] = 0x0a;
-
-        return bufret;
-    }
-
-    private void EnableBtn(boolean enabled) {
-        Misc.printerEnable(enabled);
-        if (enabled) {
-            try {
-                recvBuf = new byte[0];
-                mSerialPort = new SerialPort(configCom, 115200, 0);
-                if (mSerialPort != null)
-                    new readThread().start();
-            } catch (SecurityException e) {
-                e.printStackTrace();
-                Toast.makeText(AddVisitors_EL101.this, "Sorry this Device will not connect to EL 101/102.. " +
-                        "Try for other device", Toast.LENGTH_SHORT).show();
-                /*finish();*/
-            } catch (IOException e) {
-                e.printStackTrace();
-                /*Toast.makeText(AddVisitors_EL101.this, "Port Err: " + configCom + " " + e.toString(), Toast.LENGTH_SHORT).show();*/
+                writeNdefMessage(tag, ndefMessage);*/
+                SmartCardAdapter smartCardAdapter = new SmartCardAdapter();
+                smartCardAdapter.writeSmartTag(AddVisitors_EL101.this, intent, BarCodeValue);
             }
         }
     }
 
-    class readThread extends Thread {
-        @Override
-        public void run() {
-            super.run();
-            while (!isInterrupted()) {
-                if ((mSerialPort == null) || (mSerialPort.getInputStream() == null))
-                    return;
-                byte[] buffer = new byte[65536];
-                int size = 0;
-                try {
-                    while (size == 0) {
-                        if (mSerialPort == null)
-                            return;
-                        size = mSerialPort.getInputStream().available();
-                    }
-                    size = mSerialPort.getInputStream().read(buffer);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                if (size > 0) {
-                    byte[] recv = new byte[size];
-                    for (int i = 0; i < size; i++)
-                        recv[i] = buffer[i];
-
-                    recvBuf = ArrayUtil.MergerArray(recvBuf, recv);
-                    timehandler.removeCallbacksAndMessages(null);
-                    timehandler.postDelayed(timerunnable, 300);
-                }
-            }
-        }
-    }
-
-    public void printQRcode(int width,String str){
-        //generate a qrcode bitmap
-        final int dimension = width;
-        Encoder encoder = new Encoder.Builder()
-                .setBackgroundColor(0xFFFFFF)
-                .setCodeColor(0xFF000000)
-                .setOutputBitmapWidth(dimension)
-                .setOutputBitmapHeight(dimension)
-                .setOutputBitmapPadding(0) //set no padding
-                .build();
-        final Bitmap QRCodeImage = encoder.encode(str);
-        //save the qrimage
-        //saveBitmap(QRCodeImage);
-        //print image
-        QRCodeImage(QRCodeImage);
-    }
-
-    public String QRCodeImage(Bitmap bitmap){
-        String set = "";
-
-
-        if(printerStatus==-1){
-            System.out.println("no paper");
-            return "false";
-        }
-
-        PrintPic localPrintPic = new PrintPic();
-
-        localPrintPic.initCanvas(bitmap.getWidth(), bitmap.getHeight());  //
-        localPrintPic.initPaint();
-        localPrintPic.drawImage(0.0F, 0.0F, bitmap);
-        byte[] var4  = localPrintPic.printDraw();
-        byte[] var2 = new byte[1160];// ??????48???,???384???    ????24?,????48???
-
-        int i = 0;
-        if (localPrintPic.getLength()<=0)
-            return "";
-        int index =0;
-        byte [] sendbytesNew = null;
-        int var1 = 0;
-        int var13=0;
-
-        int length=localPrintPic.getLength()%24>0?localPrintPic.getLength()/24+1:localPrintPic.getLength()/24;
-
-        begin =System.currentTimeMillis();
-        System.out.println("begin:"+begin);
-        for(int row=0;row<length;row++)
-        {
-            if(printerStatus==-1){
-                System.out.println("no paper");
-                return "false";
-            }
-            index = 0;
-            var2[0] = 0x1d;
-            var2[1] = 0x76;
-            var2[2] = 0x30;
-            var2[3] = 0;
-            var2[4] = (byte)(localPrintPic.getWidth() / 8);  //xl  ?????? ??
-            var2[5] = 0;    //xh  ?????? ??
-            int line=0;
-            if(localPrintPic.getLength()%24>0&&row==length-1){
-                line=localPrintPic.getLength()%24;
-            }else{
-                line=24;
-            }
-            var2[6] = (byte)line;    //yl  ??????  ??
-            var2[7] = 0;   //yh	   ??????  ??
-            var13  =8;
-            for(int var14 = 0; var14 <( (localPrintPic.getWidth() / 8)*line); var14++){
-
-                var2[var13] = var4[var1];
-                var13 = var13+1;
-                var1 =  var1 + 1;
-                index++;
-            }
-            sendbytesNew = new byte[8+(localPrintPic.getWidth() / 8*line)];
-            for(i=0;i<sendbytesNew.length;i++)
-            {
-                sendbytesNew[i] = var2[i];
-            }
-            //System.out.println("row:"+row+" send:"+HexDump.dumpHexString(sendbytesNew));
-
-            Message msg=Message.obtain();
-            msg.what=SendCommand;
-            msg.obj=sendbytesNew;
-            mHandler.sendMessageDelayed(msg,180*row);
-        }
-
-        //feed paper
-
-        /*mHandler.sendEmptyMessageDelayed(FEED, length*180);
-        // test no paper
-        mHandler.sendEmptyMessageDelayed(PAPER_TEST,length*180+180);*/
-
-        return set;
-    }
-
-    public String PrintImage2(ImageView imageview) {
-        Bitmap actualbitmap = ((BitmapDrawable) imageview.getDrawable()).getBitmap();
-        int width=256;
-        int height=192;
-        Bitmap bitMap = Bitmap.createScaledBitmap(actualbitmap, width, height, true);
-        /*Drawable drawable = this.getResources().getDrawable(R.drawable.abcde);
-        Bitmap actualbitmap = ((BitmapDrawable) drawable).getBitmap();
-        int width = 256;
-        int height = 192;
-        Bitmap bitMap = Bitmap.createScaledBitmap(actualbitmap, width, height, true);*/
-        Bitmap bb = ImageProcessing.bitMaptoGrayscale(bitMap);
-        int width1 = bb.getWidth();
-        int height1 = bb.getHeight();
-        LogStatus("width1: "+width1);
-        LogStatus("height1: "+height1);
-        saveBitmap(bb);
-        Bitmap bitmap = ImageProcessing.convertGreyImgByFloyd(bb);
-        saveBitmap(bitmap);
-        String set = "";
-
-        if (printerStatus == -1) {
-            System.out.println("no paper");
-            return "false";
-        }
-
-        PrintPic localPrintPic = new PrintPic();
-
-        localPrintPic.initCanvas(bitmap.getWidth(), bitmap.getHeight());
-        localPrintPic.initPaint();
-        localPrintPic.drawImage(0.0F, 0.0F, bitmap);
-        byte[] var4 = localPrintPic.printDraw();
-        byte[] var2 = new byte[1160];
-
-        int i = 0;
-        if (localPrintPic.getLength() <= 0)
-            return "";
-        int index = 0;
-        byte[] sendbytesNew = null;
-        int var1 = 0;
-        int var13 = 0;
-
-        int length = localPrintPic.getLength() % 24 > 0 ? localPrintPic.getLength() / 24 + 1 : localPrintPic.getLength() / 24;
-
-        begin = System.currentTimeMillis();
-        System.out.println("begin:" + begin);
-        for (int row = 0; row < length; row++) {
-            if (printerStatus == -1) {
-                System.out.println("no paper");
-                return "false";
-            }
-            index = 0;
-            var2[0] = 0x1d;
-            var2[1] = 0x76;
-            var2[2] = 0x30;
-            var2[3] = 0;
-            var2[4] = (byte) (localPrintPic.getWidth() / 8);
-            var2[5] = 0;
-            int line = 0;
-            if (localPrintPic.getLength() % 24 > 0 && row == length - 1) {
-                line = localPrintPic.getLength() % 24;
-            } else {
-                line = 24;
-            }
-            var2[6] = (byte) line;
-            var2[7] = 0;
-            var13 = 8;
-            for (int var14 = 0; var14 < ((localPrintPic.getWidth() / 8) * line); var14++) {
-
-                var2[var13] = var4[var1];
-                var13 = var13 + 1;
-                var1 = var1 + 1;
-                index++;
-            }
-            sendbytesNew = new byte[8 + (localPrintPic.getWidth() / 8 * line)];
-            for (i = 0; i < sendbytesNew.length; i++) {
-                sendbytesNew[i] = var2[i];
-            }
-            //System.out.println("row:"+row+" send:"+HexDump.dumpHexString(sendbytesNew));
-            Message msg = Message.obtain();
-            msg.what = SendCommand;
-            msg.obj = sendbytesNew;
-            /*Log.d("debug", "Message result: "+HexDump.dumpHex((byte[]) msg.obj));
-            *//*String temp = HexDump.dumpHex((byte[]) msg.obj);*/
-            mHandler.sendMessageDelayed(msg, 180 * row);
-        }
-        //feed paper
-        mHandler.sendEmptyMessageDelayed(FEED, length * 180);
-        // test no paper
-        mHandler.sendEmptyMessageDelayed(PAPER_TEST, length * 180 + 180);
-        return set;
-    }
-
-    public String PrintHumanImage(ImageView imageview){
-        Bitmap actualbitmap = ((BitmapDrawable) imageview.getDrawable()).getBitmap();
-        int width=256;
-        int height=192;
-        Bitmap bitmap = Bitmap.createScaledBitmap(actualbitmap, width, height, true);
-		/*Bitmap bb = ImageProcessing.bitMaptoGrayscale(bitMap);
-		int width1 = bb.getWidth();
-		int height1 = bb.getHeight();
-		Log.d("debug", "width1: "+width1);
-		Log.d("debug", "height1: "+height1);
-		saveBitmap(bb);
-		Bitmap bitmap = ImageProcessing.convertGreyImgByFloyd(bb);
-		saveBitmap(bitmap);*/
-        String set = "";
-        if(printerStatus==-1){
-            System.out.println("no paper");
-            return "false";
-        }
-        byte[] sendbytes = Printer.POS_PrintPicture(bitmap, bitmap.getWidth(), 0);
-
-        Message msg=Message.obtain();
-        msg.what=SendCommand;
-        msg.obj=sendbytes;
-        mHandler.sendMessageDelayed(msg,20);
-
-        //feed paper
-        mHandler.sendEmptyMessageDelayed(FEED, 180);
-        // test no paper
-        mHandler.sendEmptyMessageDelayed(PAPER_TEST, 180 + 180);
-
-        return set;
-    }
-
-    private void LogStatus(String str) {
-        Log.d("debug", str);
-    }
-
-    public void saveBitmap(Bitmap mBitmap) {
-
-        Long fileName=System.currentTimeMillis();
-
-        File folder = new File(Environment.getExternalStorageDirectory().getPath() +"/QRcode");
-        if(!folder.exists()){
-            boolean falg= FileUtil.createDirectory("QRcode");
-            Log.d("debug", "createfolder:"+falg);
-        }
-        File f=new File(Environment.getExternalStorageDirectory().getPath() +"/QRcode/"+fileName+".png");
-        FileUtil.createFile(folder.toString(), fileName+".png");
-
-        FileOutputStream fOut = null;
-        try {
-            fOut = new FileOutputStream(f);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        mBitmap.compress(Bitmap.CompressFormat.PNG, 100, fOut);
-        try {
-            fOut.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            fOut.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private void enableForegroundDispatchSystem() {
+        Intent intent = new Intent(this, AddVisitors_EL101.class).addFlags(Intent.FLAG_RECEIVER_REPLACE_PENDING);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        IntentFilter[] intentFilters = new IntentFilter[] {};
+        nfcAdapter.enableForegroundDispatch(this, pendingIntent, intentFilters, null);
     }
 }

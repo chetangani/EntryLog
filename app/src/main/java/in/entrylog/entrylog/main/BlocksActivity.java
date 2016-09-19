@@ -10,11 +10,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -26,7 +22,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.Toast;
@@ -46,7 +41,6 @@ import in.entrylog.entrylog.dataposting.ConnectingTask.CheckUpdatedApk;
 import in.entrylog.entrylog.main.bluetooth.AddVisitor_Bluetooth;
 import in.entrylog.entrylog.main.el101_102.AddVisitors_EL101;
 import in.entrylog.entrylog.main.el201.AddVisitors_EL201;
-import in.entrylog.entrylog.main.el201.CheckoutVisitors_EL201;
 import in.entrylog.entrylog.main.services.FieldsService;
 import in.entrylog.entrylog.main.services.PrintingService;
 import in.entrylog.entrylog.main.services.StaffService;
@@ -64,7 +58,7 @@ public class BlocksActivity extends AppCompatActivity {
     public static final int DIALOG_DOWNLOAD_PROGRESS = 0;
     private ProgressDialog mProgressDialog;
     Button AddVisitors_btn, Checkout_btn, Visitors_btn, ManualCheckout_btn;
-    String OrganizationID, OrganizationName, GuardID, User, UpdateApkURL="", Apkfile="";
+    String OrganizationID, OrganizationName, GuardID, User, UpdateApkURL="", Apkfile="", Serverapkversion="", Appversion="";
     SerialPrinter printer;
     SharedPreferences settings;
     SharedPreferences.Editor editor;
@@ -116,11 +110,6 @@ public class BlocksActivity extends AppCompatActivity {
         Intent service2 = new Intent(BlocksActivity.this, StaffService.class);
         startService(service2);
 
-        /*imeiFunctionCalls.OrientationView(BlocksActivity.this);
-        Log.d("debug", "MANUFACTURER : "+Build.MANUFACTURER
-                +"\nMODEL : "+Build.MODEL
-                +"\nPRODUCT : "+Build.PRODUCT);*/
-
         AddVisitors_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -134,6 +123,7 @@ public class BlocksActivity extends AppCompatActivity {
                         addVisitors(AddVisitor_Bluetooth.class);
                     } else if (!settings.getString("Printertype", "").equals("Bluetooth")) {
                         if (settings.getString("Device", "").equals("EL101")) {
+                            /*addVisitors(AddVisitors_EL101.class);*/
                             if (el101_enabled) {
                                 Toast.makeText(BlocksActivity.this, "EL101", Toast.LENGTH_SHORT).show();
                                 addVisitors(AddVisitors_EL101.class);
@@ -142,6 +132,7 @@ public class BlocksActivity extends AppCompatActivity {
                                         Toast.LENGTH_SHORT).show();
                             }
                         } else if (settings.getString("Device", "").equals("EL201")) {
+                            /*addVisitors(AddVisitors_EL201.class);*/
                             if (Build.MANUFACTURER.equals("LS888")) {
                                 Toast.makeText(BlocksActivity.this, "EL201", Toast.LENGTH_SHORT).show();
                                 addVisitors(AddVisitors_EL201.class);
@@ -149,13 +140,7 @@ public class BlocksActivity extends AppCompatActivity {
                                 Toast.makeText(BlocksActivity.this, "EL201 device will not support for your device..",
                                         Toast.LENGTH_SHORT).show();
                             }
-                        }/* else {
-                            if (!el101_enabled) {
-                                if (!Build.MANUFACTURER.equals("LS888")) {
-                                    addVisitors(AddVisitors_EL201.class);
-                                }
-                            }
-                        }*/
+                        }
                     }
                 } else {
                     Toast.makeText(BlocksActivity.this, "Please Turn On Internet", Toast.LENGTH_SHORT).show();
@@ -170,8 +155,6 @@ public class BlocksActivity extends AppCompatActivity {
                     if (settings.getString("Printertype", "").equals("")) {
                         checkoutbtn = true;
                         showdialog(DEVICE_DLG);
-                    } else if (settings.getString("Device", "").equals("EL201")) {
-                        checkoutVisitors(CheckoutVisitors_EL201.class);
                     } else {
                         checkoutVisitors(CheckoutVisitors.class);
                     }
@@ -246,6 +229,7 @@ public class BlocksActivity extends AppCompatActivity {
 
             case R.id.menu_settings:
                 startActivityForResult(new Intent(android.provider.Settings.ACTION_SETTINGS), 0);
+                /*startActivity(new Intent("android.settings.NFC_SETTINGS"));*/
                 break;
 
             case R.id.menu_printer:
@@ -339,7 +323,7 @@ public class BlocksActivity extends AppCompatActivity {
                                 visitors(Visitors.class, "Visitors");
                             } else if (checkoutbtn) {
                                 checkoutbtn = false;
-                                checkoutVisitors(CheckoutVisitors_EL201.class);
+                                checkoutVisitors(CheckoutVisitors.class);
                             } else {
                                 Toast.makeText(BlocksActivity.this, "EL201", Toast.LENGTH_SHORT).show();
                             }
@@ -353,7 +337,8 @@ public class BlocksActivity extends AppCompatActivity {
             case ABOUTUS_DLG:
                 AlertDialog.Builder aboutus = new AlertDialog.Builder(this);
                 aboutus.setTitle("About Us");
-                aboutus.setMessage("About Us will be implemented soon");
+                aboutus.setMessage("EntryLog.in is an innovative, smart visitor management system."+"\n"+"\n"
+                        +"http://www.entrylog.in/"+"\n"+"\n"+"Contact: +91 80953-12121"+"\n"+"Email: support@entrylog.in");
                 aboutus.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -368,7 +353,7 @@ public class BlocksActivity extends AppCompatActivity {
                 AlertDialog.Builder appupdate = new AlertDialog.Builder(this);
                 appupdate.setTitle("App Updates");
                 if (updatefound) {
-                    appupdate.setMessage("Newer version of Entrylog Application is available to Update..");
+                    appupdate.setMessage(Serverapkversion +" version of Entrylog.in Application is available to Update..");
                     appupdate.setPositiveButton("UPDATE", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -377,18 +362,18 @@ public class BlocksActivity extends AppCompatActivity {
                         }
                     });
                 } else {
-                    appupdate.setMessage("Current Version of Entrylog Application is up to date..");
+                    appupdate.setMessage("Version "+Appversion+" is up to date..");
                     appupdate.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-
+                            updatethread.interrupt();
                         }
                     });
                 }
                 appupdate.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-
+                        updatethread.interrupt();
                     }
                 });
                 AlertDialog appupdatealert = appupdate.create();
@@ -508,12 +493,11 @@ public class BlocksActivity extends AppCompatActivity {
                         } catch (PackageManager.NameNotFoundException e) {
                             e.printStackTrace();
                         }
-                        String Appversion = pInfo.versionName;
+                        Appversion = pInfo.versionName;
                         Apkfile = detailsValue.getApkfile();
                         UpdateApkURL = detailsValue.getApkdownloadUrl();
-                        String Serverapkversion = Apkfile.substring(Apkfile.length()-9, Apkfile.length()-4);
-                        File apkFile = new File(android.os.Environment.getExternalStorageDirectory(), "Entrylog"
-                                + File.separator + "Apk" + File.separator + Apkfile);
+                        Serverapkversion = Apkfile.substring(Apkfile.length()-9, Apkfile.length()-4);
+                        File apkFile = new File(functionCalls.checkapkfilepath(Apkfile));
                         if (apkFile.exists()) {
                             updatethread.interrupt();
                             try {
@@ -529,8 +513,7 @@ public class BlocksActivity extends AppCompatActivity {
                     if (appdownloaded) {
                         appdownloaded = false;
                         updatethread.interrupt();
-                        File apkFile = new File(android.os.Environment.getExternalStorageDirectory(), "Entrylog"
-                                + File.separator + "Apk" + File.separator + Apkfile);
+                        File apkFile = new File(functionCalls.checkapkfilepath(Apkfile));
                         try {
                             if (apkFile.exists()) {
                                 functionCalls.LogStatus("Apk file exist");
@@ -601,15 +584,14 @@ public class BlocksActivity extends AppCompatActivity {
                 Log.d("debug", "Length of file: " + lengthOfFile);
 
                 InputStream input = new BufferedInputStream(url.openStream());
-                File apkFile = new File(android.os.Environment.getExternalStorageDirectory(), "Entrylog"
-                        + File.separator + "Apk" + File.separator + Apkfile);
+                File apkFile = new File(functionCalls.checkapkfilepath(Apkfile));
                 if (apkFile.exists()) {
                     apkFile.delete();
                     functionCalls.LogStatus("Apk file exists and deleted it");
                 } else {
                     functionCalls.LogStatus("Apk file doesn't exists");
                 }
-                OutputStream output = new FileOutputStream(functionCalls.filepath("Apk")+ File.separator + Apkfile);
+                OutputStream output = new FileOutputStream(functionCalls.apkfilepath()+ File.separator + Apkfile);
 
                 byte data[] = new byte[1024];
 

@@ -14,7 +14,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 
+import in.entrylog.entrylog.main.services.PrintingService;
 import in.entrylog.entrylog.util.ArrayUtil;
 import in.entrylog.entrylog.util.Encoder;
 import in.entrylog.entrylog.util.FileUtil;
@@ -36,12 +40,16 @@ public class EL101_102 {
     String configCom = "/dev/ttyVK1";
     static byte[] recvBuf;
     long begin;
-    SerialPort mSerialPort;
-    static int recStatus = -1;
-    static int printerStatus = 0;
-    static Handler timehandler = new Handler();
+    public SerialPort mSerialPort;
+    public static int recStatus = -1;
+    public static int printerStatus = 0;
+    public static Handler timehandler = new Handler();
+    public static boolean imageprinting = false;
+    PrintingService printingService = new PrintingService();
+    static ArrayList<String> printingdisplay;
+    FunctionCalls functionCalls = new FunctionCalls();
 
-    Runnable timerunnable = new Runnable() {
+    public Runnable timerunnable = new Runnable() {
 
         @Override
         public void run() {
@@ -100,15 +108,26 @@ public class EL101_102 {
     public void SendCommad(byte[] order) {
         if (mSerialPort != null) {
             try {
-                recvBuf = new byte[0];
-                mSerialPort.getOutputStream().write(order);
-                if (order.length < 200) {
-                    // too much message show will affect the UI
+                if (imageprinting) {
+                    if (!(order.length == 3)) {
+                        recvBuf = new byte[0];
+                        mSerialPort.getOutputStream().write(order);
+                        if (order.length < 200) {
+                            // too much message show will affect the UI
+                        } else {
+                        }
+                    }
+                } else {
+                    recvBuf = new byte[0];
+                    mSerialPort.getOutputStream().write(order);
+                    if (order.length < 200) {
+                        // too much message show will affect the UI
+                    } else {
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         } else {
         }
     }
@@ -158,85 +177,27 @@ public class EL101_102 {
          * code128  73
          */
 
-
         byte[] head=new byte[]{0x1d,0x6b,0x48,(byte)str.length()};
 
         byte[] body= ArrayUtil.stringToBytes(str, str.length());
         byte[] total=ArrayUtil.MergerArray(head, body);
-        // total=ArrayUtil.MergerArray(total, new byte[]{0x0A,0x1b,0x4a,0x30});
-        // byte[] test=new byte[]{0x1e,0x42,0x34,0x50,0x32,0x30,0x0a,0x31,0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x41,0x42,0x0a};
-
-        // mHandler.sendEmptyMessageDelayed(0x16, 200);
         SendCommad(total);
-
-
-        //add HRI text
-        /*
-        try {
-        	 SendCommad(new byte[]{0x1b,0x64,6});
-			SendCommad(addEnter(str.getBytes("GB2312")));
-			//set align left
-			SendCommad(new byte[]{0x1b,0x61,0x00});
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
-        */
-        //feed paper
-        /*mHandler.sendEmptyMessageDelayed(FEED, 100);
-        //return printer status
-        mHandler.sendEmptyMessageDelayed(PAPER_TEST, 200);*/
     }
 
     public void printString(String str) {
         if((str!=null)&&(str.getBytes().length!=0)){
             byte[] send = null;
             try {
-                //send = addEnter(str.getBytes("ISO8859-16"));
-                //??????????? ????GBK2312,?????????UTF-8 ,?????????iso859-16
-                //If want to print Chinese character use "GBK2312", others use "UTF-8";
                 send = addEnter(str.getBytes("GB2312"));
-                //send = str.getBytes("utf-8");
             }catch (Exception e) {
                 e.printStackTrace();
             }
             SendCommad(send);
-            //Message msg=Message.obtain();
-            //msg.what=SendCommand;
-            //msg.obj=send;
-            //mHandler.sendMessageDelayed(msg,450);
         }
-        /*String s1 = null;
-        try {
-            Log.d("debug", "Send Data Initialzing");
-            //Read and Display from text file and print
-            File myFile = new File(str);
-            Scanner reader = new Scanner(myFile);
-            while (reader.hasNextLine()) {
-                Log.d("debug", "OutputStream Started");
-                String s = reader.nextLine();
-                s1 = s;
-                Log.d("debug", s1);
-                if ((s1 != null) && (s1.getBytes().length != 0)) {
-                    byte[] send = null;
-                    try {
-                        //send = addEnter(str.getBytes("ISO8859-16"));
-                        //??????????? ????GBK2312,?????????UTF-8 ,?????????iso859-16
-                        //If want to print Chinese character use "GBK2312", others use "UTF-8";
-                        send = addEnter(s1.getBytes("GB2312"));
-                        //send = str.getBytes("utf-8");
-                    } catch (UnsupportedEncodingException e) {
-                        e.printStackTrace();
-                    }
-                    SendCommad(send);
-                }
-            }
-        } catch (IndexOutOfBoundsException e) {
+    }
 
-        } catch (NullPointerException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
+    public void Dataappend(StringBuilder sb, String Display, String data) {
+        sb.append(Display+": "+data+"\n");
     }
 
     public byte[] addEnter(byte[] buf) {
@@ -288,7 +249,7 @@ public class EL101_102 {
         return result;
     }
 
-    class readThread extends Thread {
+    public class readThread extends Thread {
         @Override
         public void run() {
             super.run();
@@ -418,109 +379,11 @@ public class EL101_102 {
         return set;
     }
 
-    public String PrintImage2(ImageView imageview) {
-        Bitmap actualbitmap = ((BitmapDrawable) imageview.getDrawable()).getBitmap();
-        int width=256;
-        int height=192;
-        Bitmap bitMap = Bitmap.createScaledBitmap(actualbitmap, width, height, true);
-        /*Drawable drawable = this.getResources().getDrawable(R.drawable.abcde);
-        Bitmap actualbitmap = ((BitmapDrawable) drawable).getBitmap();
-        int width = 256;
-        int height = 192;
-        Bitmap bitMap = Bitmap.createScaledBitmap(actualbitmap, width, height, true);*/
-        Bitmap bb = ImageProcessing.bitMaptoGrayscale(bitMap);
-        int width1 = bb.getWidth();
-        int height1 = bb.getHeight();
-        saveBitmap(bb);
-        Bitmap bitmap = ImageProcessing.convertGreyImgByFloyd(bb);
-        saveBitmap(bitmap);
-        String set = "";
-
-        if (printerStatus == -1) {
-            System.out.println("no paper");
-            return "false";
-        }
-
-        PrintPic localPrintPic = new PrintPic();
-
-        localPrintPic.initCanvas(bitmap.getWidth(), bitmap.getHeight());
-        localPrintPic.initPaint();
-        localPrintPic.drawImage(0.0F, 0.0F, bitmap);
-        byte[] var4 = localPrintPic.printDraw();
-        byte[] var2 = new byte[1160];
-
-        int i = 0;
-        if (localPrintPic.getLength() <= 0)
-            return "";
-        int index = 0;
-        byte[] sendbytesNew = null;
-        int var1 = 0;
-        int var13 = 0;
-
-        int length = localPrintPic.getLength() % 24 > 0 ? localPrintPic.getLength() / 24 + 1 : localPrintPic.getLength() / 24;
-
-        begin = System.currentTimeMillis();
-        System.out.println("begin:" + begin);
-        for (int row = 0; row < length; row++) {
-            if (printerStatus == -1) {
-                System.out.println("no paper");
-                return "false";
-            }
-            index = 0;
-            var2[0] = 0x1d;
-            var2[1] = 0x76;
-            var2[2] = 0x30;
-            var2[3] = 0;
-            var2[4] = (byte) (localPrintPic.getWidth() / 8);
-            var2[5] = 0;
-            int line = 0;
-            if (localPrintPic.getLength() % 24 > 0 && row == length - 1) {
-                line = localPrintPic.getLength() % 24;
-            } else {
-                line = 24;
-            }
-            var2[6] = (byte) line;
-            var2[7] = 0;
-            var13 = 8;
-            for (int var14 = 0; var14 < ((localPrintPic.getWidth() / 8) * line); var14++) {
-
-                var2[var13] = var4[var1];
-                var13 = var13 + 1;
-                var1 = var1 + 1;
-                index++;
-            }
-            sendbytesNew = new byte[8 + (localPrintPic.getWidth() / 8 * line)];
-            for (i = 0; i < sendbytesNew.length; i++) {
-                sendbytesNew[i] = var2[i];
-            }
-            //System.out.println("row:"+row+" send:"+HexDump.dumpHexString(sendbytesNew));
-            Message msg = Message.obtain();
-            msg.what = SendCommand;
-            msg.obj = sendbytesNew;
-            /*Log.d("debug", "Message result: "+HexDump.dumpHex((byte[]) msg.obj));
-            *//*String temp = HexDump.dumpHex((byte[]) msg.obj);*/
-            mHandler.sendMessageDelayed(msg, 180 * row);
-        }
-        //feed paper
-        mHandler.sendEmptyMessageDelayed(FEED, length * 180);
-        // test no paper
-        mHandler.sendEmptyMessageDelayed(PAPER_TEST, length * 180 + 180);
-        return set;
-    }
-
     public String PrintHumanImage(ImageView imageview){
         Bitmap actualbitmap = ((BitmapDrawable) imageview.getDrawable()).getBitmap();
         int width=256;
         int height=192;
         Bitmap bitmap = Bitmap.createScaledBitmap(actualbitmap, width, height, true);
-		/*Bitmap bb = ImageProcessing.bitMaptoGrayscale(bitMap);
-		int width1 = bb.getWidth();
-		int height1 = bb.getHeight();
-		Log.d("debug", "width1: "+width1);
-		Log.d("debug", "height1: "+height1);
-		saveBitmap(bb);
-		Bitmap bitmap = ImageProcessing.convertGreyImgByFloyd(bb);
-		saveBitmap(bitmap);*/
         String set = "";
         if(printerStatus==-1){
             System.out.println("no paper");
@@ -541,33 +404,89 @@ public class EL101_102 {
         return set;
     }
 
-    public void saveBitmap(Bitmap mBitmap) {
-
-        Long fileName=System.currentTimeMillis();
-
-        File folder = new File(Environment.getExternalStorageDirectory().getPath() +"/QRcode");
-        if(!folder.exists()){
-            boolean falg= FileUtil.createDirectory("QRcode");
-            Log.d("debug", "createfolder:"+falg);
-        }
-        File f=new File(Environment.getExternalStorageDirectory().getPath() +"/QRcode/"+fileName+".png");
-        FileUtil.createFile(folder.toString(), fileName+".png");
-
-        FileOutputStream fOut = null;
+    public void SaveData(StringBuilder printdetails, String Visitor_Name, String Visitor_Mobile, String Visitor_Fromaddress,
+                         String Visitor_ToMeet, String Visitor_CheckinTime, String Visitor_Designation, String Department,
+                         String Purpose, String House_number, String Flat_number, String Block, String No_Visitor,
+                         String aClass, String Section, String Student_Name, String ID_Card, String CheckinUser, String Email,
+                         String Vehicleno, boolean reprint) {
         try {
-            fOut = new FileOutputStream(f);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        mBitmap.compress(Bitmap.CompressFormat.PNG, 100, fOut);
-        try {
-            fOut.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            fOut.close();
-        } catch (IOException e) {
+            HashSet<String> Printdisplay = new HashSet<>();
+            Printdisplay = printingService.printingset;
+            printingdisplay = new ArrayList<>();
+            printingdisplay.addAll(Printdisplay);
+            Collections.sort(printingdisplay);
+            if (printingdisplay.size() > 0) {
+                functionCalls.LogStatus("Printing Display Size: "+printingdisplay.size());
+                for (int i = 0; i < printingdisplay.size(); i++) {
+                    String PrintOrder = printingdisplay.get(i).toString();
+                    functionCalls.LogStatus("Print Order: "+PrintOrder);
+                    String Display = PrintOrder.substring(2, PrintOrder.length());
+                    functionCalls.LogStatus("Display: "+Display);
+                    if (Display.equals("Name")) {
+                        Dataappend(printdetails, Display, Visitor_Name);
+                    }
+                    if (Display.equals("Mobile")) {
+                        Dataappend(printdetails, Display, Visitor_Mobile);
+                    }
+                    if (Display.equals("From")) {
+                        Dataappend(printdetails, Display, Visitor_Fromaddress);
+                    }
+                    if (Display.equals("To Meet")) {
+                        Dataappend(printdetails, Display, Visitor_ToMeet);
+                    }
+                    if (Display.equals("Date")) {
+                        if (!reprint) {
+                            Visitor_CheckinTime = functionCalls.CurrentDate() + " " + functionCalls.CurrentTime();
+                            Dataappend(printdetails, Display, Visitor_CheckinTime);
+                        } else {
+                            Dataappend(printdetails, Display, Visitor_CheckinTime);
+                        }
+                    }
+                    if (Display.equals("Visitor Designation")) {
+                        Dataappend(printdetails, Display, Visitor_Designation);
+                    }
+                    if (Display.equals("Department")) {
+                        Dataappend(printdetails, Display, Department);
+                    }
+                    if (Display.equals("Purpose")) {
+                        Dataappend(printdetails, Display, Purpose);
+                    }
+                    if (Display.equals("House No")) {
+                        Dataappend(printdetails, Display, House_number);
+                    }
+                    if (Display.equals("Flat No")) {
+                        Dataappend(printdetails, Display, Flat_number);
+                    }
+                    if (Display.equals("Block")) {
+                        Dataappend(printdetails, Display, Block);
+                    }
+                    if (Display.equals("No of Visitor")) {
+                        Dataappend(printdetails, Display, No_Visitor);
+                    }
+                    if (Display.equals("Class")) {
+                        Dataappend(printdetails, Display, aClass);
+                    }
+                    if (Display.equals("Section")) {
+                        Dataappend(printdetails, Display, Section);
+                    }
+                    if (Display.equals("Student")) {
+                        Dataappend(printdetails, Display, Student_Name);
+                    }
+                    if (Display.equals("Id Card")) {
+                        Dataappend(printdetails, Display, ID_Card);
+                    }
+                    if (Display.equals("Entry")) {
+                        Dataappend(printdetails, Display, CheckinUser);
+                    }
+                    if (Display.equals("Email")) {
+                        Dataappend(printdetails, Display, Email);
+                    }
+                    if (Display.equals("Vehicle Number")) {
+                        Dataappend(printdetails, Display, Vehicleno);
+                    }
+                }
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

@@ -39,8 +39,7 @@ import javax.xml.parsers.SAXParserFactory;
  */
 public class SendingData {
 
-    public static final String BASE_URL = "http://www.tellservice.com/entrylog/index.php/admin/api/";
-    /*public static final String BASE_URL = "http://www.askdial.com/entrylog/index.php/admin/api/";*/
+    String BASE_URL = DataAPI.BASE_URL;
 
     private void LogStatus(String message){
         Log.d("debug", message);

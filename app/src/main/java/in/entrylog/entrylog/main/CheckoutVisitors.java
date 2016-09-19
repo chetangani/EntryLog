@@ -1,30 +1,46 @@
 package in.entrylog.entrylog.main;
 
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.nfc.NfcManager;
+import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.Toast;
 
 import com.google.zxing.Result;
 
-//import me.dm7.barcodescanner.zxing.ZXingScannerView;
+import java.io.UnsupportedEncodingException;
 
 import in.entrylog.entrylog.dataposting.ConnectingTask;
-import in.entrylog.entrylog.values.DetailsValue;
 import in.entrylog.entrylog.dataposting.ConnectingTask.VisitorsCheckOut;
+import in.entrylog.entrylog.values.DetailsValue;
+import in.entrylog.entrylog.values.FunctionCalls;
+import in.entrylog.entrylog.values.SmartCardAdapter;
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
 
-
 public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerView.ResultHandler {
+    public static final String PREFS_NAME = "MyPrefsFile";
     private ZXingScannerView mScannerView;
     DetailsValue detailsValue;
     ConnectingTask task;
     String OrganizationID, SecurityID;
     Thread mythread;
     ProgressDialog checkoutdialog = null;
+    NfcAdapter nfcAdapter;
+    NfcManager nfcManager;
+    SharedPreferences settings;
+    boolean nfcavailable = false;
+    FunctionCalls functionCalls;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,13 +51,24 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
         mScannerView.setResultHandler(this); // Register ourselves as a handler for scan results.
         mScannerView.startCamera();
 
+        settings = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        if (settings.getString("RFID", "").equals("true")) {
+            nfcManager = (NfcManager) getSystemService(Context.NFC_SERVICE);
+            nfcAdapter = nfcManager.getDefaultAdapter();
+            if (nfcAdapter != null && nfcAdapter.isEnabled()) {
+                nfcavailable = true;
+            } else {
+                Toast.makeText(CheckoutVisitors.this, "NFC Enabled but not available in this device",
+                        Toast.LENGTH_SHORT).show();
+            }
+        }
+
         detailsValue = new DetailsValue();
         task = new ConnectingTask();
+        functionCalls = new FunctionCalls();
 
-        Intent intent = getIntent();
-        Bundle bnd = intent.getExtras();
-        OrganizationID = bnd.getString("ID");
-        SecurityID = bnd.getString("GuardID");
+        OrganizationID = settings.getString("OrganizationID", "");
+        SecurityID = settings.getString("GuardID", "");
     }
 
     @Override
@@ -51,39 +78,41 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if (nfcavailable) {
+            enableForegroundDispatchSystem();
+        }
+    }
+
+    private void enableForegroundDispatchSystem() {
+        Intent intent = new Intent(this, CheckoutVisitors.class).addFlags(Intent.FLAG_RECEIVER_REPLACE_PENDING);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        IntentFilter[] intentFilters = new IntentFilter[] {};
+        nfcAdapter.enableForegroundDispatch(this, pendingIntent, intentFilters, null);
+    }
+
+    @Override
     public void handleResult(final Result result) {
         // show the scanner result into dialog box.
-        /*AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Scan Result");
-        builder.setMessage(result.getText().toString());
-        builder.setPositiveButton("CHECK OUT", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result.getText().toString(),
-                        OrganizationID, SecurityID);
-                checkOut.execute();
-                checkoutdialog = ProgressDialog.show(CheckoutVisitors.this, "", "Checking Out...", true);
-                mythread = null;
-                Runnable runnable = new DisplayTimer();
-                mythread = new Thread(runnable);
-                mythread.start();
-            }
-        }).setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                finish();
-            }
-        });
-        AlertDialog alert1 = builder.create();
-        alert1.show();*/
-        VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result.getText().toString(),
-                OrganizationID, SecurityID);
-        checkOut.execute();
-        checkoutdialog = ProgressDialog.show(CheckoutVisitors.this, "", "Checking Out...", true);
-        mythread = null;
-        Runnable runnable = new DisplayTimer();
-        mythread = new Thread(runnable);
-        mythread.start();
+
+        checkingout(result.getText().toString());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.hasExtra(NfcAdapter.EXTRA_TAG)) {
+            Toast.makeText(CheckoutVisitors.this, "Smart Card Intent", Toast.LENGTH_SHORT).show();
+            /*Parcelable[] parcelables = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+            if (parcelables != null && parcelables.length > 0) {
+                readTextFromMessage((NdefMessage) parcelables[0]);
+            } else {
+                Toast.makeText(CheckoutVisitors.this, "No Ndef Message Found", Toast.LENGTH_SHORT).show();
+            }*/
+            SmartCardAdapter smartCardAdapter = new SmartCardAdapter();
+            smartCardAdapter.readSmartTag(CheckoutVisitors.this, intent);
+        }
     }
 
     class DisplayTimer implements Runnable {
@@ -115,6 +144,7 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
                         checkoutdialog.dismiss();
                         Message = "Successfully Checked Out";
                         out = "Success";
+                        functionCalls.ringtone(CheckoutVisitors.this);
                         createdialog(Message, out);
                     }
                     if (detailsValue.isVisitorsCheckOutFailure()) {
@@ -176,5 +206,42 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
         }
         AlertDialog alert1 = builder.create();
         alert1.show();
+    }
+
+    private void showdialog(final String result) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Scan Result");
+        builder.setMessage(result);
+        builder.setPositiveButton("CHECK OUT", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
+                        OrganizationID, SecurityID);
+                checkOut.execute();
+                checkoutdialog = ProgressDialog.show(CheckoutVisitors.this, "", "Checking Out...", true);
+                mythread = null;
+                Runnable runnable = new DisplayTimer();
+                mythread = new Thread(runnable);
+                mythread.start();
+            }
+        }).setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                finish();
+            }
+        });
+        AlertDialog alert1 = builder.create();
+        alert1.show();
+    }
+
+    public void checkingout(String result) {
+        VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
+                OrganizationID, SecurityID);
+        checkOut.execute();
+        checkoutdialog = ProgressDialog.show(CheckoutVisitors.this, "", "Checking Out...", true);
+        mythread = null;
+        Runnable runnable = new DisplayTimer();
+        mythread = new Thread(runnable);
+        mythread.start();
     }
 }

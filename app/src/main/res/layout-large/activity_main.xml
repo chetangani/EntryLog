@@ -79,12 +79,6 @@
                 android:inputType="textPassword" />
         </android.support.design.widget.TextInputLayout>
 
-        <CheckBox
-            android:id="@+id/password_box"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Show Password" />
-
         <Button
             android:id="@+id/login_btn"
             android:layout_width="match_parent"
@@ -92,7 +86,7 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginLeft="20dp"
             android:layout_marginRight="20dp"
-            android:layout_marginTop="25dp"
+            android:layout_marginTop="35dp"
             android:background="@drawable/buttonpressed"
             android:text="LOGIN"
             android:textColor="@android:color/white"

@@ -513,7 +513,8 @@ public class ConnectingTask {
         @Override
         protected String doInBackground(String... params) {
             try {
-                result = sendingData.OvernightStay_Visitors(Organization_ID);
+                /*result = sendingData.OvernightStay_Visitors(Organization_ID);*/
+                result = sendingData.CheckVisitors(Organization_ID);
             } catch (NullPointerException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -524,7 +525,8 @@ public class ConnectingTask {
 
         @Override
         protected void onPostExecute(String result) {
-            receivingData.VisitorsStatus(result, detailsValue, arrayList, adapters);
+            /*receivingData.VisitorsStatus(result, detailsValue, arrayList, adapters);*/
+            receivingData.CheckVisitorsStatus(result, detailsValue, arrayList, adapters);
         }
     }
 
