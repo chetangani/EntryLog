@@ -1,7 +1,10 @@
 package in.entrylog.entrylog.values;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
@@ -20,6 +23,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.regex.Pattern;
 
+import in.entrylog.entrylog.main.AlarmReceiver;
 import in.entrylog.entrylog.util.FileUtil;
 
 /**
@@ -256,11 +260,11 @@ public class FunctionCalls {
         int curyear = cal.get(Calendar.YEAR);
         int curmonth = cal.get(Calendar.MONTH);
         int curdate = cal.get(Calendar.DAY_OF_MONTH);
-        String Currentdate = "" + curdate + "-" + "" + (curmonth + 1) + "-" + curyear;
+        String Currentdate = "" + curyear + "-" + "" + (curmonth + 1) + "-" + curdate;
         Date Starttime = null;
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         try {
-            Starttime = new SimpleDateFormat("dd-MM-yyyy").parse(Currentdate);
+            Starttime = new SimpleDateFormat("yyyy-MM-dd").parse(Currentdate);
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -278,13 +282,40 @@ public class FunctionCalls {
         }
         String Currenttime = "" + curhour + ":" + minute;
         Date Starttime = null;
-        SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a");
+        SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss a");
         try {
-            Starttime = new SimpleDateFormat("HH:mm").parse(Currenttime);
+            Starttime = new SimpleDateFormat("HH:mm:ss").parse(Currenttime);
         } catch (ParseException e) {
             e.printStackTrace();
         }
         String Time = sdf.format(Starttime);
         return Time;
+    }
+
+    public void startReceiver(Context context, int time) {
+        AlarmManager alarmMgr;
+        PendingIntent alarmIntent;
+        alarmMgr = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+        Intent receiver = new Intent(context, AlarmReceiver.class);
+        alarmIntent = PendingIntent.getBroadcast(context, 0, receiver, 0);
+        // Set the alarm to start at 8:30 a.m.
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        calendar.set(Calendar.HOUR_OF_DAY, time);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(calendar.SECOND, 0);
+        // setRepeating() lets you specify a precise custom interval--in this case,
+        // 20 minutes.
+        alarmMgr.setInexactRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(),
+                AlarmManager.INTERVAL_DAY, alarmIntent);
+    }
+
+    public void cancelReceiver(Context context) {
+        AlarmManager alarmMgr;
+        PendingIntent alarmIntent;
+        alarmMgr = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+        Intent receiver = new Intent(context, AlarmReceiver.class);
+        alarmIntent = PendingIntent.getBroadcast(context, 0, receiver, 0);
+        alarmMgr.cancel(alarmIntent);
     }
 }

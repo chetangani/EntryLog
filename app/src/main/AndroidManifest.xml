@@ -60,6 +60,7 @@
         <service android:name=".main.services.FieldsService" />
         <service android:name=".main.services.StaffService" />
         <service android:name=".main.services.PrintingService" />
+        <service android:name=".main.services.TimeService" />
 
         <activity android:name=".main.el101_102.Visitor_Details_EL101" />
         <activity android:name=".main.Search_Details" />

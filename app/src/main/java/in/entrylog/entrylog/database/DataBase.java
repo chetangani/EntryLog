@@ -63,13 +63,13 @@ public class DataBase {
                     "image_path text, bar_code text, organization_id text, security_guards_id text, upload_image text, " +
                     "visitor_designation text, department text, purpose text, house_number text, flat_number text, block text, " +
                     "no_visitor text, class text, section text, student_name text, id_card_number text, device text, " +
-                    "visitor_entry text);");
+                    "visitor_entry text, current_time text);");
             db.execSQL("Create table ENTRYLOGDATA(_id integer primary key, visitors_name text, visitors_email text, " +
                     "visitors_mobile text, visitors_address text, to_meet text, visitors_vehicle_no text, visitors_photo text, " +
                     "image_path text, bar_code text, organization_id text, security_guards_id text, upload_image text, " +
                     "visitor_designation text, department text, purpose text, house_number text, flat_number text, block text, " +
                     "no_visitor text, class text, section text, student_name text, id_card_number text, device text, " +
-                    "visitor_entry text);");
+                    "visitor_entry text, current_time text);");
         }
 
         @Override
@@ -109,7 +109,8 @@ public class DataBase {
                               String Imagefile, String ImagePath, String Barcode, String OrganizationID, String SecurityID,
                               String Upload_Image, String visitor_Designation, String department, String purpose,
                               String house_number, String flat_number, String block, String no_Visitor, String aclass,
-                              String section, String student_Name, String ID_Card, String Device, String Visitor_Entry) {
+                              String section, String student_Name, String ID_Card, String Device, String Visitor_Entry,
+                              String Current_Time) {
         ContentValues cv = new ContentValues();
         cv.put("visitors_name", Name);
         cv.put("visitors_email", Email);
@@ -136,6 +137,7 @@ public class DataBase {
         cv.put("id_card_number", ID_Card);
         cv.put("device", Device);
         cv.put("visitor_entry", Visitor_Entry);
+        cv.put("current_time", Current_Time);
         sdb.insert("CHECKINDATA", null, cv);
     }
 
@@ -143,7 +145,8 @@ public class DataBase {
                                    String Imagefile, String ImagePath, String Barcode, String OrganizationID, String SecurityID,
                                    String Upload_Image, String visitor_Designation, String department, String purpose,
                                    String house_number, String flat_number, String block, String no_Visitor, String aclass,
-                                   String section, String student_Name, String ID_Card, String Device, String Visitor_Entry) {
+                                   String section, String student_Name, String ID_Card, String Device, String Visitor_Entry,
+                                   String Current_Time) {
         ContentValues cv = new ContentValues();
         cv.put("visitors_name", Name);
         cv.put("visitors_email", Email);
@@ -170,6 +173,7 @@ public class DataBase {
         cv.put("id_card_number", ID_Card);
         cv.put("device", Device);
         cv.put("visitor_entry", Visitor_Entry);
+        cv.put("current_time", Current_Time);
         sdb.insert("ENTRYLOGDATA", null, cv);
     }
 

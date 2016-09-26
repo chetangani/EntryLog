@@ -71,6 +71,7 @@ import in.entrylog.entrylog.dataposting.DataAPI;
 import in.entrylog.entrylog.main.services.FieldsService;
 import in.entrylog.entrylog.main.services.PrintingService;
 import in.entrylog.entrylog.main.services.StaffService;
+import in.entrylog.entrylog.main.services.TimeService;
 import in.entrylog.entrylog.main.services.Updatedata;
 import in.entrylog.entrylog.values.DataPrinting;
 import in.entrylog.entrylog.values.DetailsValue;
@@ -216,6 +217,9 @@ public class AddVisitors_EL101 extends AppCompatActivity {
 
         mProgressBar = findViewById(R.id.addvisitors_progress);
 
+        Intent timeservice = new Intent(AddVisitors_EL101.this, TimeService.class);
+        startService(timeservice);
+
         MobileNoSuggestThread();
 
         Organizationid = settings.getString("OrganizationID", "");
@@ -316,18 +320,23 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                             Visitors_ImagefileName = Mobile+""+num + ".jpg";
                             if (!Visitors_ImagefileName.equals("")) {
                                 getExtraFields();
+                                if (!settings.getString("ServerTime", "").equals("")) {
+                                    DateTime = settings.getString("ServerTime", "");
+                                } else {
+                                    DateTime = functionCalls.CurrentDate() + " " + functionCalls.CurrentTime();
+                                }
                                 if (UpdateVisitorImage.equals("Yes")) {
                                     dataBase.insertentrylogdata(Name, Email, Mobile, FromAddress, ToMeet, Vehicleno,
                                             Visitors_ImagefileName, fileUri.getPath(), BarCodeValue, Organizationid, GuardID,
                                             UpdateVisitorImage, Visitor_Designation, Department, Purpose, House_number,
                                             Flat_number, Block, No_Visitor, aClass, Section, Student_Name, ID_Card,
-                                            settings.getString("Device", ""), Visitor_Entry);
+                                            settings.getString("Device", ""), Visitor_Entry, DateTime);
                                 } else {
                                     dataBase.insertentrylogdata(Name, Email, Mobile, FromAddress, ToMeet, Vehicleno,
                                             "", "", BarCodeValue, Organizationid, GuardID,
                                             UpdateVisitorImage, Visitor_Designation, Department, Purpose, House_number,
                                             Flat_number, Block, No_Visitor, aClass, Section, Student_Name, ID_Card,
-                                            settings.getString("Device", ""), Visitor_Entry);
+                                            settings.getString("Device", ""), Visitor_Entry, DateTime);
                                 }
                                 functionCalls.LogStatus("Update Data Service: "+settings.getString("UpdateData", ""));
                                 if (!settings.getString("UpdateData", "").equals("Running")) {
@@ -405,9 +414,9 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                 el101_102device.SendCommad(new byte[]{0x1b, 0x61, 0x00});
                 el101_102device.SendCommad(new byte[]{0x1b, 0x61, 0x00});
                 el101_102device.SendCommad(new byte[]{0x1b, 0x61, 0x00});
-                el101_102device.SaveData(printdetails, Name, Mobile, FromAddress, ToMeet, DateTime, Visitor_Designation,
-                        Department, Purpose, House_number, Flat_number, Block, No_Visitor, aClass, Section, Student_Name,
-                        ID_Card, User, Email, Vehicleno, reprint);
+                el101_102device.SaveData(printdetails, Name, Mobile, FromAddress, ToMeet, functionCalls.Convertdate(DateTime),
+                        Visitor_Designation, Department, Purpose, House_number, Flat_number, Block, No_Visitor, aClass, Section,
+                        Student_Name, ID_Card, User, Email, Vehicleno, reprint);
                 el101_102device.printString(""+printdetails);
                 el101_102device.printString("   "+"\n");
             }
@@ -418,6 +427,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                 dialog.dismiss();
                 printdetails.delete(0, printdetails.length());
                 showdialog(END_DLG);
+                /*finish();*/
             }
         }, 7500);
     }
@@ -698,6 +708,12 @@ public class AddVisitors_EL101 extends AppCompatActivity {
         functionCalls.deleteTextfile("Header.txt");
         functionCalls.deleteTextfile("Empty.txt");
         functionCalls.deleteTextfile("Data.txt");
+        if (TimeService.Timeservice) {
+            Intent timeservice = new Intent(AddVisitors_EL101.this, TimeService.class);
+            stopService(timeservice);
+        }
+        editor.putString("ServerTime", "");
+        editor.commit();
         super.onDestroy();
     }
 

@@ -81,6 +81,7 @@ import in.entrylog.entrylog.dataposting.DataAPI;
 import in.entrylog.entrylog.main.services.FieldsService;
 import in.entrylog.entrylog.main.services.PrintingService;
 import in.entrylog.entrylog.main.services.StaffService;
+import in.entrylog.entrylog.main.services.TimeService;
 import in.entrylog.entrylog.main.services.Updatedata;
 import in.entrylog.entrylog.util.ImageProcessing;
 import in.entrylog.entrylog.values.DataPrinting;
@@ -242,6 +243,9 @@ public class AddVisitors_EL201 extends AppCompatActivity {
 
         mProgressBar = findViewById(R.id.addvisitors_progress);
 
+        Intent timeservice = new Intent(AddVisitors_EL201.this, TimeService.class);
+        startService(timeservice);
+
         OrganizationPath = functionCalls.filepath("Textfile") + File.separator + "Organization.txt";
         HeaderPath = functionCalls.filepath("Textfile") + File.separator + "Header.txt";
         DataPath = functionCalls.filepath("Textfile") + File.separator + "Data.txt";
@@ -332,6 +336,12 @@ public class AddVisitors_EL201 extends AppCompatActivity {
         functionCalls.deleteTextfile("Organization.txt");
         functionCalls.deleteTextfile("Header.txt");
         functionCalls.deleteTextfile("Data.txt");
+        if (TimeService.Timeservice) {
+            Intent timeservice = new Intent(AddVisitors_EL201.this, TimeService.class);
+            stopService(timeservice);
+        }
+        editor.putString("ServerTime", "");
+        editor.commit();
         super.onDestroy();
     }
 
@@ -352,18 +362,23 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                             Visitors_ImagefileName = Mobile+""+num + ".jpg";
                             if (!Visitors_ImagefileName.equals("")) {
                                 getExtraFields();
+                                if (!settings.getString("ServerTime", "").equals("")) {
+                                    DateTime = settings.getString("ServerTime", "");
+                                } else {
+                                    DateTime = functionCalls.CurrentDate() + " " + functionCalls.CurrentTime();
+                                }
                                 if (UpdateVisitorImage.equals("Yes")) {
                                     dataBase.insertentrylogdata(Name, Email, Mobile, FromAddress, ToMeet, Vehicleno,
                                             Visitors_ImagefileName, fileUri.getPath(), BarCodeValue, Organizationid, GuardID,
                                             UpdateVisitorImage, Visitor_Designation, Department, Purpose, House_number,
                                             Flat_number, Block, No_Visitor, aClass, Section, Student_Name, ID_Card,
-                                            settings.getString("Device", ""), Visitor_Entry);
+                                            settings.getString("Device", ""), Visitor_Entry, DateTime);
                                 } else {
                                     dataBase.insertentrylogdata(Name, Email, Mobile, FromAddress, ToMeet, Vehicleno,
                                             "", "", BarCodeValue, Organizationid, GuardID,
                                             UpdateVisitorImage, Visitor_Designation, Department, Purpose, House_number,
                                             Flat_number, Block, No_Visitor, aClass, Section, Student_Name, ID_Card,
-                                            settings.getString("Device", ""), Visitor_Entry);
+                                            settings.getString("Device", ""), Visitor_Entry, DateTime);
                                 }
                                 if (!settings.getString("UpdateData", "").equals("Running")) {
                                     Log.d("debug", "Service Started");
@@ -767,12 +782,13 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                         myOutWriter.append(ToMeet + "\r\n");
                     }
                     if (Display.equals("Date")) {
-                        if (!reprint) {
+                        /*if (!reprint) {
                             DateTime = CurrentDate() + " " + CurrentTime() + "\r\n";
                             myOutWriter.append(DateTime);
                         } else {
                             myOutWriter.append(DateTime);
-                        }
+                        }*/
+                        myOutWriter.append(functionCalls.Convertdate(DateTime) + "\r\n");
                     }
                     if (Display.equals("Visitor Designation")) {
                         myOutWriter.append(Visitor_Designation + "\r\n");

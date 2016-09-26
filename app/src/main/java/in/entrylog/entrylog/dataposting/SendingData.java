@@ -150,7 +150,7 @@ public class SendingData {
                                   String ImagefileName, String Organization_ID, String Security_ID, String Barcode,
                                   String visitor_Designation, String department, String purpose, String house_number,
                                   String flat_number, String block, String no_Visitor, String aClass, String section,
-                                  String student_Name, String ID_Card, String Visitor_Entry) {
+                                  String student_Name, String ID_Card, String Visitor_Entry, String Current_Time) {
         String response = "";
         try {
             LogStatus("1");
@@ -206,6 +206,8 @@ public class SendingData {
             LogStatus("26 ID_Card "+ID_Card);
             nameValuePairs.add(new BasicNameValuePair("verification_status_id", Visitor_Entry));
             LogStatus("27 Visitor_Entry "+Visitor_Entry);
+            nameValuePairs.add(new BasicNameValuePair("checked_in_time", Current_Time));
+            LogStatus("27 Current_Time "+Current_Time);
             httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
             LogStatus("28");
             HttpResponse httpResponse = httpClient.execute(httpPost);
@@ -548,6 +550,35 @@ public class SendingData {
         }
         Log.d("debug", "6");
         Log.d("debug", "Response: "+response);
+        return response;
+    }
+
+    public String GetTime() {
+        String response = "";
+        try {
+            String PostReceiveURL = BASE_URL + "Get_time";
+            Log.d("debug", PostReceiveURL);
+            HttpClient httpClient = new DefaultHttpClient();
+            Log.d("debug", "1");
+            HttpPost httpPost = new HttpPost(PostReceiveURL);
+            Log.d("debug", "2");
+            HttpResponse httpResponse = httpClient.execute(httpPost);
+            Log.d("debug", "3");
+            HttpEntity httpEntity = httpResponse.getEntity();
+            Log.d("debug", "4");
+            if (httpEntity != null) {
+                response = EntityUtils.toString(httpEntity).trim();
+                Log.d("debug", "5");
+            }
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Log.d("debug", "6");
+        Log.d("debug", "Time Response: "+response);
         return response;
     }
 }

@@ -12,14 +12,14 @@ public class DetailsValue {
     boolean LoginSuccess, LoginFailure, Fieldsexists, NoFieldsExists, VisitorCheckedIn, VisitorCheckInError, VisitorsCheckOutSuccess,
             VisitorsCheckOutFailure, VisitorImageUpload, MobileAutoSuggestSuccess, MobileAutoSuggestFailure, MobileNoExist, LoginExist,
             VisitorsCheckOutDone, NoVisitorsFound, VisitorsFound, StaffExists, NoStaffExist, PrinterOrderSuccess, PrinterOrderNoData,
-            Accountblocked, PermissionSuccess, PermissionFailure, Apkfilexist;
+            Accountblocked, PermissionSuccess, PermissionFailure, Apkfilexist, GotTime, NoTime;
     String GuardID, OrganizationID, OrganizationName, Fields, ImageFileName, VisitorsId, OverNightStay_Time;
     int DisplayFields;
     String Visitors_Name, Visitors_Email, Visitors_Mobile, Visitors_Address, Visitors_tomeet, Visitors_VehicleNo, Visitors_Photo,
             Visitors_CheckInTime, Visitors_CheckInBy, Visitor_ID, Visitors_CheckOutTime, Visitors_BarCode, Check_in_User,
             Check_out_User, Visitor_Designation, Department, Purpose, House_number, Flat_number, Block, No_Visitor, aClass, Section,
             Student_Name, ID_Card, OTPAccess, ImageAccess, Printertype, Scannertype, RfidStatus, DeviceModel, Cameratype, Apkfile,
-            ApkdownloadUrl;
+            ApkdownloadUrl, ServerTime;
     BluetoothSocket Socket;
     BluetoothDevice device;
     static ArrayList<String> arrayFields;
@@ -602,5 +602,29 @@ public class DetailsValue {
 
     public void setApkfilexist(boolean apkfilexist) {
         Apkfilexist = apkfilexist;
+    }
+
+    public boolean isGotTime() {
+        return GotTime;
+    }
+
+    public void setGotTime(boolean gotTime) {
+        GotTime = gotTime;
+    }
+
+    public boolean isNoTime() {
+        return NoTime;
+    }
+
+    public void setNoTime(boolean noTime) {
+        NoTime = noTime;
+    }
+
+    public String getServerTime() {
+        return ServerTime;
+    }
+
+    public void setServerTime(String serverTime) {
+        ServerTime = serverTime;
     }
 }

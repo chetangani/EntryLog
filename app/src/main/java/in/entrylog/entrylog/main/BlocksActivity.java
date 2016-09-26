@@ -14,6 +14,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Handler;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -58,7 +59,8 @@ public class BlocksActivity extends AppCompatActivity {
     public static final int DIALOG_DOWNLOAD_PROGRESS = 0;
     private ProgressDialog mProgressDialog;
     Button AddVisitors_btn, Checkout_btn, Visitors_btn, ManualCheckout_btn;
-    String OrganizationID, OrganizationName, GuardID, User, UpdateApkURL="", Apkfile="", Serverapkversion="", Appversion="";
+    String OrganizationID, OrganizationName, GuardID, User, UpdateApkURL="", Apkfile="", Serverapkversion="", Appversion="",
+            OverNightTime="";
     SerialPrinter printer;
     SharedPreferences settings;
     SharedPreferences.Editor editor;
@@ -88,6 +90,7 @@ public class BlocksActivity extends AppCompatActivity {
         GuardID = settings.getString("GuardID", "");
         OrganizationName = settings.getString("OrganizationName", "");
         User = settings.getString("User", "");
+        OverNightTime = settings.getString("OverNightTime", "");
 
         task = new ConnectingTask();
         printer = new SerialPrinter();
@@ -110,6 +113,16 @@ public class BlocksActivity extends AppCompatActivity {
         Intent service2 = new Intent(BlocksActivity.this, StaffService.class);
         startService(service2);
 
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (!OverNightTime.equals("")) {
+                    int time = Integer.parseInt(OverNightTime);
+                    functionCalls.startReceiver(BlocksActivity.this, time);
+                }
+            }
+        }, 5000);
+
         AddVisitors_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -123,7 +136,8 @@ public class BlocksActivity extends AppCompatActivity {
                         addVisitors(AddVisitor_Bluetooth.class);
                     } else if (!settings.getString("Printertype", "").equals("Bluetooth")) {
                         if (settings.getString("Device", "").equals("EL101")) {
-                            /*addVisitors(AddVisitors_EL101.class);*/
+                            /*Toast.makeText(BlocksActivity.this, "EL101", Toast.LENGTH_SHORT).show();
+                            addVisitors(AddVisitors_EL101.class);*/
                             if (el101_enabled) {
                                 Toast.makeText(BlocksActivity.this, "EL101", Toast.LENGTH_SHORT).show();
                                 addVisitors(AddVisitors_EL101.class);
@@ -446,6 +460,9 @@ public class BlocksActivity extends AppCompatActivity {
                             Log.d("debug", "Entrylog Folder deleted");
                         } else {
                             Log.d("debug", "Entrylog Folder not deleted");
+                        }
+                        if (!OverNightTime.equals("")) {
+                            functionCalls.cancelReceiver(BlocksActivity.this);
                         }
                         Intent logoutIntent = new Intent();
                         setResult(Activity.RESULT_OK, logoutIntent);

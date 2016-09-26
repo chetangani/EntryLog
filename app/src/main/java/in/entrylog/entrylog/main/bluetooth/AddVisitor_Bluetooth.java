@@ -69,6 +69,7 @@ import in.entrylog.entrylog.dataposting.DataAPI;
 import in.entrylog.entrylog.main.services.FieldsService;
 import in.entrylog.entrylog.main.services.PrintingService;
 import in.entrylog.entrylog.main.services.StaffService;
+import in.entrylog.entrylog.main.services.TimeService;
 import in.entrylog.entrylog.main.services.Updatedata;
 import in.entrylog.entrylog.myprinter.BTPrinting;
 import in.entrylog.entrylog.myprinter.Global;
@@ -209,6 +210,9 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
         mHandler = new MHandler(this);
         WorkService.addHandler(mHandler);
 
+        Intent timeservice = new Intent(AddVisitor_Bluetooth.this, TimeService.class);
+        startService(timeservice);
+
         if (null == WorkService.workThread) {
             Intent intent = new Intent(this, WorkService.class);
             startService(intent);
@@ -335,18 +339,23 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                             Visitors_ImagefileName = Mobile+""+num + ".jpg";
                             if (!Visitors_ImagefileName.equals("")) {
                                 getExtraFields();
+                                if (!settings.getString("ServerTime", "").equals("")) {
+                                    DateTime = settings.getString("ServerTime", "");
+                                } else {
+                                    DateTime = functionCalls.CurrentDate() + " " + functionCalls.CurrentTime();
+                                }
                                 if (UpdateVisitorImage.equals("Yes")) {
                                     dataBase.insertentrylogdata(Name, Email, Mobile, FromAddress, ToMeet, Vehicleno,
                                             Visitors_ImagefileName, fileUri.getPath(), BarCodeValue, Organizationid, GuardID,
                                             UpdateVisitorImage, Visitor_Designation, Department, Purpose, House_number,
                                             Flat_number, Block, No_Visitor, aClass, Section, Student_Name, ID_Card,
-                                            settings.getString("Device", ""), Visitor_Entry);
+                                            settings.getString("Device", ""), Visitor_Entry, DateTime);
                                 } else {
                                     dataBase.insertentrylogdata(Name, Email, Mobile, FromAddress, ToMeet, Vehicleno,
                                             Visitors_ImagefileName, "", BarCodeValue, Organizationid, GuardID,
                                             UpdateVisitorImage, Visitor_Designation, Department, Purpose, House_number,
                                             Flat_number, Block, No_Visitor, aClass, Section, Student_Name, ID_Card,
-                                            settings.getString("Device", ""), Visitor_Entry);
+                                            settings.getString("Device", ""), Visitor_Entry, DateTime);
                                 }
                                 if (!settings.getString("UpdateData", "").equals("Running")) {
                                     Log.d("debug", "Service Started");
@@ -961,12 +970,13 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                         myOutWriter.append(ToMeet + "\r\n");
                     }
                     if (Display.equals("Date")) {
-                        if (!reprint) {
+                        /*if (!reprint) {
                             DateTime = CurrentDate() + " " + CurrentTime() + "\r\n";
                             myOutWriter.append(DateTime);
                         } else {
                             myOutWriter.append(DateTime);
-                        }
+                        }*/
+                        myOutWriter.append(functionCalls.Convertdate(DateTime) + "\r\n");
                     }
                     if (Display.equals("Visitor Designation")) {
                         myOutWriter.append(Visitor_Designation + "\r\n");
@@ -1014,43 +1024,6 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private String CurrentDate() {
-        Calendar cal = Calendar.getInstance();
-        int curyear = cal.get(Calendar.YEAR);
-        int curmonth = cal.get(Calendar.MONTH);
-        int curdate = cal.get(Calendar.DAY_OF_MONTH);
-        String Currentdate = "" + curdate + "/" + "" + (curmonth + 1) + "/" + curyear;
-        Date Starttime = null;
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-        try {
-            Starttime = new SimpleDateFormat("dd/MM/yyyy").parse(Currentdate);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        String Date = sdf.format(Starttime);
-        return Date;
-    }
-
-    private String CurrentTime() {
-        Calendar cal = Calendar.getInstance();
-        int curhour = cal.get(Calendar.HOUR_OF_DAY);
-        int curminute = cal.get(Calendar.MINUTE);
-        String minute = "" + curminute;
-        if (minute.length() == 1) {
-            minute = "0" + minute;
-        }
-        String Currenttime = "" + curhour + ":" + minute;
-        Date Starttime = null;
-        SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a");
-        try {
-            Starttime = new SimpleDateFormat("HH:mm").parse(Currenttime);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        String Time = sdf.format(Starttime);
-        return Time;
     }
 
     private void QRCode() {
@@ -1586,6 +1559,12 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
             this.unregisterReceiver(mPairing);
         }
         functionCalls.deleteTextfile("Data.txt");
+        if (TimeService.Timeservice) {
+            Intent timeservice = new Intent(AddVisitor_Bluetooth.this, TimeService.class);
+            stopService(timeservice);
+        }
+        editor.putString("ServerTime", "");
+        editor.commit();
         super.onDestroy();
     }
 }

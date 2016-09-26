@@ -603,4 +603,20 @@ public class ReceivingData {
             e.printStackTrace();
         }
     }
+
+    public void TimeStatus(String result, DetailsValue details) {
+        try {
+            JSONObject jo = new JSONObject(result);
+            if (jo != null) {
+                if (jo.getString("message").equals("Success")) {
+                    details.setServerTime(jo.getString("current_time"));
+                    details.setGotTime(true);
+                } else {
+                    details.setNoTime(true);
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 }

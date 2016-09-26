@@ -435,12 +435,13 @@ public class EL101_102 {
                         Dataappend(printdetails, Display, Visitor_ToMeet);
                     }
                     if (Display.equals("Date")) {
-                        if (!reprint) {
+                        /*if (!reprint) {
                             Visitor_CheckinTime = functionCalls.CurrentDate() + " " + functionCalls.CurrentTime();
                             Dataappend(printdetails, Display, Visitor_CheckinTime);
                         } else {
                             Dataappend(printdetails, Display, Visitor_CheckinTime);
-                        }
+                        }*/
+                        Dataappend(printdetails, Display, Visitor_CheckinTime);
                     }
                     if (Display.equals("Visitor Designation")) {
                         Dataappend(printdetails, Display, Visitor_Designation);

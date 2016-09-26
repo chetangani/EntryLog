@@ -102,9 +102,6 @@ public class VisitorsAdapters extends RecyclerView.Adapter<VisitorsAdapters.Visi
             int pos = getAdapterPosition();
             DetailsValue details = arrayList.get(pos);
 
-            String datetime = details.getVisitors_CheckInTime();
-            String date = datetime.substring(0, datetime.indexOf(" "));
-            String time = datetime.substring(datetime.indexOf(" ")+1);
             String checkouttime = "";
             try {
                 if (!details.getVisitors_CheckOutTime().equals("")) {

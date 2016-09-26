@@ -84,9 +84,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        /*if(Misc.nativeReadMode()==0){
+        if(Misc.nativeReadMode()==0){
             Misc.nativeUsbMode(1);
-        }*/
+        }
 
         settings = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         editor = settings.edit();
@@ -224,28 +224,24 @@ public class MainActivity extends AppCompatActivity {
                         details.setLoginSuccess(false);
                         String ID = details.getOrganizationID();
                         functionCalls.LogStatus("ID: "+ID);
-                        showtoast("ID: "+ID);
+                        functionCalls.showToast(MainActivity.this, "ID: "+ID);
                         String SecurityID = details.getGuardID();
                         functionCalls.LogStatus("SecurityID: "+SecurityID);
                         String OrganizationName = details.getOrganizationName();
                         functionCalls.LogStatus("OrganizationName: "+OrganizationName);
                         String Nighttime = details.getOverNightStay_Time();
                         functionCalls.LogStatus("Nighttime: "+Nighttime);
-                        showtoast("Nighttime: "+Nighttime);
+                        functionCalls.showToast(MainActivity.this, "Nighttime: "+Nighttime);
                         if (!Nighttime.equals("")) {
                             if (!Nighttime.substring(0, 1).equals(":")) {
                                 if (!Nighttime.substring(1, 2).equals(":")) {
                                     if (Nighttime.substring(2, 3).equals(":")) {
                                         OverNightTime = Nighttime.substring(0, 2);
-                                        int time = Integer.parseInt(OverNightTime);
                                         Log.d("debug", "OverNightTime: " + OverNightTime);
-                                        startreceiver(time);
                                     }
                                 } else {
                                     OverNightTime = Nighttime.substring(0, 1);
-                                    int time = Integer.parseInt(OverNightTime);
                                     Log.d("debug", "OverNightTime: " + OverNightTime);
-                                    startreceiver(time);
                                 }
                             } else {
                                 Log.d("debug", "OverNightTime: Invalid");
@@ -310,14 +306,14 @@ public class MainActivity extends AppCompatActivity {
                         Printertype = details.getPrintertype();
                         editor.putString("Printertype", Printertype);
                         editor.commit();
-                        showtoast("Printertype: "+settings.getString("Printertype", ""));
+                        functionCalls.showToast(MainActivity.this, "Printertype: "+settings.getString("Printertype", ""));
                         Scannertype = details.getScannertype();
                         functionCalls.LogStatus("Scanner type: "+Scannertype);
                         editor.putString("Scannertype", Scannertype);
                         editor.commit();
-                        showtoast("Scannertype: "+settings.getString("Scannertype", ""));
+                        functionCalls.showToast(MainActivity.this, "Scannertype: "+settings.getString("Scannertype", ""));
                         DeviceModel = details.getDeviceModel();
-                        showtoast("Device Model: "+DeviceModel);
+                        functionCalls.showToast(MainActivity.this, "Device Model: "+DeviceModel);
                         if (DeviceModel.equals("El-101")) {
                             editor.putString("Device", "EL101");
                         }
@@ -335,7 +331,7 @@ public class MainActivity extends AppCompatActivity {
                             editor.putString("RFID", "false");
                         }
                         editor.commit();
-                        showtoast("RFID: "+settings.getString("RFID", ""));
+                        functionCalls.showToast(MainActivity.this, "RFID: "+settings.getString("RFID", ""));
                         Cameratype = details.getCameratype();
                         if (Cameratype.equals("Internal Camera")) {
                             editor.putString("Cameratype", "Internal");
@@ -366,32 +362,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void startreceiver(int time) {
-        alarmMgr = (AlarmManager)this.getSystemService(Context.ALARM_SERVICE);
-        Intent receiver = new Intent(this, AlarmReceiver.class);
-        alarmIntent = PendingIntent.getBroadcast(this, 0, receiver, 0);
-        // Set the alarm to start at 8:30 a.m.
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(System.currentTimeMillis());
-        calendar.set(Calendar.HOUR_OF_DAY, time);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(calendar.SECOND, 0);
-        // setRepeating() lets you specify a precise custom interval--in this case,
-        // 20 minutes.
-        alarmMgr.setInexactRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(),
-                AlarmManager.INTERVAL_DAY, alarmIntent);
-    }
-
-    public Date selectiondate(String date) {
-        Date date1 = null;
-        try {
-            date1 = new SimpleDateFormat("dd/MM/yyyy").parse(date);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        return date1;
-    }
-
     public String Currentdate() throws ParseException {
         final Calendar c = Calendar.getInstance();
         int year = c.get(Calendar.YEAR);
@@ -405,10 +375,6 @@ public class MainActivity extends AppCompatActivity {
         return present_date2;
     }
 
-    private void showtoast(String message) {
-        Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
-    }
-
     public void loginpageview() {
         if (loginsuccess) {
             user_etTxt.setText(settings.getString("User", ""));
@@ -419,10 +385,6 @@ public class MainActivity extends AppCompatActivity {
             pass_etTxt.setEnabled(false);
             orgid_etTxt.requestFocus();
         } else {
-            OverNightTime = settings.getString("OverNightTime", "");
-            if (!OverNightTime.equals("")) {
-                cancelreceiver();
-            }
             user_etTxt.setText("");
             user_etTxt.setEnabled(true);
             orgid_etTxt.setText("");
@@ -431,13 +393,6 @@ public class MainActivity extends AppCompatActivity {
             pass_etTxt.setEnabled(true);
             orgid_etTxt.requestFocus();
         }
-    }
-
-    private void cancelreceiver() {
-        alarmMgr = (AlarmManager)this.getSystemService(Context.ALARM_SERVICE);
-        Intent receiver = new Intent(this, AlarmReceiver.class);
-        alarmIntent = PendingIntent.getBroadcast(context, 0, receiver, 0);
-        alarmMgr.cancel(alarmIntent);
     }
 
     @Override
