@@ -17,19 +17,6 @@ import android.os.IBinder;
 import android.util.Base64;
 import android.util.Log;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.util.EntityUtils;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -77,10 +64,6 @@ public class Updatedata extends Service {
     SharedPreferences settings;
     SharedPreferences.Editor editor;
     HashMap<String, String> postdata;
-
-    public static boolean getServiceRunning() {
-        return Updatedata.Servicerunning;
-    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -134,218 +117,11 @@ public class Updatedata extends Service {
         @Override
         protected String doInBackground(String... params) {
             try {
-                datamap = new HashMap<>();
-                Log.d("debug", "Image upload 1");
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                Log.d("debug", "Image upload 2");
-                image.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
-                Log.d("debug", "Image upload 3");
-                byte[] imageInByte = byteArrayOutputStream.toByteArray();
-                long lengthbmp = imageInByte.length;
-                Log.d("debug", "Image size to Upload: "+lengthbmp);
-                String encodedImage = Base64.encodeToString(byteArrayOutputStream.toByteArray(), Base64.DEFAULT);
-                Log.d("debug", "Image upload 4");
-                /*ArrayList<NameValuePair> datatosend = new ArrayList<>();*/
-                datamap.put("visitors_photo", encodedImage);
-                Log.d("debug", "Image upload 5");
-                datamap.put("visitors_mobile", Mobile);
-                Log.d("debug", "Image upload 6");
-                datamap.put("visitors_id", Visitors_id);
-                Log.d("debug", "Image upload 7");
-                /*datatosend.add(new BasicNameValuePair("visitors_photo", encodedImage));
-                Log.d("debug", "Image upload 6");
-                datatosend.add(new BasicNameValuePair("visitors_mobile", Mobile));
-                Log.d("debug", "Image upload Mobile" + Mobile);
-                datatosend.add(new BasicNameValuePair("visitors_id", Visitors_id));
-                Log.d("debug", "Image upload Visitors ID" + Visitors_id);*/
-                /*HttpParams httpRequestParams = getHttpRequestParam();
-                Log.d("debug", "Image upload 7");
-                HttpClient httpClient = new DefaultHttpClient(httpRequestParams);
-                Log.d("debug", "Image upload 8");
-                HttpPost httpPost = new HttpPost(Image_Url);
-                Log.d("debug", "Image upload 9");*/
-                try {
-                    /*Log.d("debug", "Image upload 10");
-                    httpPost.setEntity(new UrlEncodedFormEntity(datatosend));
-                    Log.d("debug", "Image upload 11");
-                    HttpResponse httpResponse = httpClient.execute(httpPost);
-                    Log.d("debug", "Image upload 12");
-                    HttpEntity httpEntity = httpResponse.getEntity();
-                    Log.d("debug", "Image upload 13");
-                    if (httpEntity != null) {
-                        Log.d("debug", "Image upload 14");
-                        responsestr = EntityUtils.toString(httpEntity).trim();
-                    }*/
-                    url = new URL(Image_Url);
-                    Log.d("debug", "Image upload 8");
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    Log.d("debug", "Image upload 9");
-                    conn.setReadTimeout(15000);
-                    Log.d("debug", "Image upload 10");
-                    conn.setConnectTimeout(15000);
-                    Log.d("debug", "Image upload 11");
-                    conn.setRequestMethod("POST");
-                    Log.d("debug", "Image upload 12");
-                    conn.setDoInput(true);
-                    Log.d("debug", "Image upload 13");
-                    conn.setDoOutput(true);
-                    Log.d("debug", "Image upload 14");
-
-                    OutputStream os = conn.getOutputStream();
-                    Log.d("debug", "Image upload 15");
-                    BufferedWriter writer = new BufferedWriter(
-                            new OutputStreamWriter(os, "UTF-8"));
-                    Log.d("debug", "Image upload 16");
-                    try {
-                        writer.write(getPostDataString(datamap));
-                        Log.d("debug", "Image upload 17");
-                    } catch (RuntimeException re) {
-                        Log.d("debug", "RunTime Exception Image upload 17");
-                        writer.write(getPostDataString(datamap));
-                        Log.d("debug", "Image upload 17");
-                    } catch (UnsupportedEncodingException ee) {
-                        Log.d("debug", "UnsupportedEncodingException Image upload 17");
-                        writer.write(getPostDataString(datamap));
-                        Log.d("debug", "Image upload 17");
-                    } catch (OutOfMemoryError ome) {
-                        Log.d("debug", "OutOfMemoryError Image upload 17");
-                        writer.write(getPostDataString(datamap));
-                        Log.d("debug", "Image upload 17");
-                    }
-                    writer.flush();
-                    Log.d("debug", "Image upload 18");
-                    writer.close();
-                    Log.d("debug", "Image upload 19");
-                    os.close();
-                    Log.d("debug", "Image upload 20");
-                    int responseCode=conn.getResponseCode();
-                    Log.d("debug", "Image upload 21");
-                    if (responseCode == HttpsURLConnection.HTTP_OK) {
-                        Log.d("debug", "Image upload 22");
-                        String line;
-                        BufferedReader br=new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                        Log.d("debug", "Image upload 23");
-                        while ((line=br.readLine()) != null) {
-                            responsestr+=line;
-                        }
-                        Log.d("debug", "Image upload 24");
-                    }
-                    else {
-                        responsestr="";
-
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                Log.d("debug", "Response for upload image "+responsestr);
+                responsestr = uploadimage(url, datamap, image, 100);
                 return responsestr;
             } catch (OutOfMemoryError ex) {
                 Log.d("debug", "OutofMemory Exception caught");
-                datamap = new HashMap<>();
-                Log.d("debug", "Image upload 1");
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                Log.d("debug", "Image upload 2");
-                Log.d("debug", "Image upload Compressing to 75..");
-                image.compress(Bitmap.CompressFormat.JPEG, 75, byteArrayOutputStream);
-                Log.d("debug", "Image upload 3");
-                byte[] imageInByte = byteArrayOutputStream.toByteArray();
-                long lengthbmp = imageInByte.length;
-                Log.d("debug", "Image size to Upload: "+lengthbmp);
-                String encodedImage = Base64.encodeToString(byteArrayOutputStream.toByteArray(), Base64.DEFAULT);
-                Log.d("debug", "Image upload 4");
-                /*ArrayList<NameValuePair> datatosend = new ArrayList<>();*/
-                datamap.put("visitors_photo", encodedImage);
-                Log.d("debug", "Image upload 5");
-                datamap.put("visitors_mobile", Mobile);
-                Log.d("debug", "Image upload 6");
-                datamap.put("visitors_id", Visitors_id);
-                Log.d("debug", "Image upload 7");
-                /*datatosend.add(new BasicNameValuePair("visitors_photo", encodedImage));
-                Log.d("debug", "Image upload 6");
-                datatosend.add(new BasicNameValuePair("visitors_mobile", Mobile));
-                Log.d("debug", "Image upload Mobile" + Mobile);
-                datatosend.add(new BasicNameValuePair("visitors_id", Visitors_id));
-                Log.d("debug", "Image upload Visitors ID" + Visitors_id);*/
-                /*HttpParams httpRequestParams = getHttpRequestParam();
-                Log.d("debug", "Image upload 7");
-                HttpClient httpClient = new DefaultHttpClient(httpRequestParams);
-                Log.d("debug", "Image upload 8");
-                HttpPost httpPost = new HttpPost(Image_Url);
-                Log.d("debug", "Image upload 9");*/
-                try {
-                    /*Log.d("debug", "Image upload 10");
-                    httpPost.setEntity(new UrlEncodedFormEntity(datatosend));
-                    Log.d("debug", "Image upload 11");
-                    HttpResponse httpResponse = httpClient.execute(httpPost);
-                    Log.d("debug", "Image upload 12");
-                    HttpEntity httpEntity = httpResponse.getEntity();
-                    Log.d("debug", "Image upload 13");
-                    if (httpEntity != null) {
-                        Log.d("debug", "Image upload 14");
-                        responsestr = EntityUtils.toString(httpEntity).trim();
-                    }*/
-                    url = new URL(Image_Url);
-                    Log.d("debug", "Image upload 8");
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    Log.d("debug", "Image upload 9");
-                    conn.setReadTimeout(15000);
-                    Log.d("debug", "Image upload 10");
-                    conn.setConnectTimeout(15000);
-                    Log.d("debug", "Image upload 11");
-                    conn.setRequestMethod("POST");
-                    Log.d("debug", "Image upload 12");
-                    conn.setDoInput(true);
-                    Log.d("debug", "Image upload 13");
-                    conn.setDoOutput(true);
-                    Log.d("debug", "Image upload 14");
-
-                    OutputStream os = conn.getOutputStream();
-                    Log.d("debug", "Image upload 15");
-                    BufferedWriter writer = new BufferedWriter(
-                            new OutputStreamWriter(os, "UTF-8"));
-                    Log.d("debug", "Image upload 16");
-                    try {
-                        writer.write(getPostDataString(datamap));
-                        Log.d("debug", "Image upload 17");
-                    } catch (RuntimeException re) {
-                        Log.d("debug", "RunTime Exception Image upload 17");
-                        writer.write(getPostDataString(datamap));
-                        Log.d("debug", "Image upload 17");
-                    } catch (UnsupportedEncodingException ee) {
-                        Log.d("debug", "UnsupportedEncodingException Image upload 17");
-                        writer.write(getPostDataString(datamap));
-                        Log.d("debug", "Image upload 17");
-                    } catch (OutOfMemoryError ome) {
-                        Log.d("debug", "OutOfMemoryError Image upload 17");
-                        writer.write(getPostDataString(datamap));
-                        Log.d("debug", "Image upload 17");
-                    }
-                    writer.flush();
-                    Log.d("debug", "Image upload 18");
-                    writer.close();
-                    Log.d("debug", "Image upload 19");
-                    os.close();
-                    Log.d("debug", "Image upload 20");
-                    int responseCode=conn.getResponseCode();
-                    Log.d("debug", "Image upload 21");
-                    if (responseCode == HttpsURLConnection.HTTP_OK) {
-                        Log.d("debug", "Image upload 22");
-                        String line;
-                        BufferedReader br=new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                        Log.d("debug", "Image upload 23");
-                        while ((line=br.readLine()) != null) {
-                            responsestr+=line;
-                        }
-                        Log.d("debug", "Image upload 24");
-                    }
-                    else {
-                        responsestr="";
-
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                Log.d("debug", "Response for upload image "+responsestr);
+                responsestr = uploadimage(url, datamap, image, 75);
                 return responsestr;
             }
         }
@@ -375,11 +151,89 @@ public class Updatedata extends Service {
         return result.toString();
     }
 
-    private static HttpParams getHttpRequestParam() {
-        HttpParams httpParams = new BasicHttpParams();
-        HttpConnectionParams.setConnectionTimeout(httpParams, 1000 * 30);
-        HttpConnectionParams.setSoTimeout(httpParams, 1000 * 30);
-        return httpParams;
+    private static String uploadimage(URL url, HashMap<String, String> datamap, Bitmap image, int quality) {
+        String response = "";
+        datamap = new HashMap<>();
+        Log.d("debug", "Image upload 1");
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        Log.d("debug", "Image upload 2");
+        Log.d("debug", "Image upload Compressing to "+quality+"..");
+        image.compress(Bitmap.CompressFormat.JPEG, quality, byteArrayOutputStream);
+        Log.d("debug", "Image upload 3");
+        byte[] imageInByte = byteArrayOutputStream.toByteArray();
+        long lengthbmp = imageInByte.length;
+        Log.d("debug", "Image size to Upload: "+lengthbmp);
+        String encodedImage = Base64.encodeToString(byteArrayOutputStream.toByteArray(), Base64.DEFAULT);
+        Log.d("debug", "Image upload 4");
+        datamap.put("visitors_photo", encodedImage);
+        Log.d("debug", "Image upload 5");
+        datamap.put("visitors_mobile", Mobile);
+        Log.d("debug", "Image upload 6");
+        datamap.put("visitors_id", Visitors_id);
+        Log.d("debug", "Image upload 7");
+        try {
+            url = new URL(Image_Url);
+            Log.d("debug", "Image upload 8");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            Log.d("debug", "Image upload 9");
+            conn.setReadTimeout(15000);
+            Log.d("debug", "Image upload 10");
+            conn.setConnectTimeout(15000);
+            Log.d("debug", "Image upload 11");
+            conn.setRequestMethod("POST");
+            Log.d("debug", "Image upload 12");
+            conn.setDoInput(true);
+            Log.d("debug", "Image upload 13");
+            conn.setDoOutput(true);
+            Log.d("debug", "Image upload 14");
+
+            OutputStream os = conn.getOutputStream();
+            Log.d("debug", "Image upload 15");
+            BufferedWriter writer = new BufferedWriter(
+                    new OutputStreamWriter(os, "UTF-8"));
+            Log.d("debug", "Image upload 16");
+            try {
+                writer.write(getPostDataString(datamap));
+                Log.d("debug", "Image upload 17");
+            } catch (RuntimeException re) {
+                Log.d("debug", "RunTime Exception Image upload 17");
+                writer.write(getPostDataString(datamap));
+                Log.d("debug", "Image upload 17");
+            } catch (UnsupportedEncodingException ee) {
+                Log.d("debug", "UnsupportedEncodingException Image upload 17");
+                writer.write(getPostDataString(datamap));
+                Log.d("debug", "Image upload 17");
+            } catch (OutOfMemoryError ome) {
+                Log.d("debug", "OutOfMemoryError Image upload 17");
+                writer.write(getPostDataString(datamap));
+                Log.d("debug", "Image upload 17");
+            }
+            writer.flush();
+            Log.d("debug", "Image upload 18");
+            writer.close();
+            Log.d("debug", "Image upload 19");
+            os.close();
+            Log.d("debug", "Image upload 20");
+            int responseCode=conn.getResponseCode();
+            Log.d("debug", "Image upload 21");
+            if (responseCode == HttpsURLConnection.HTTP_OK) {
+                Log.d("debug", "Image upload 22");
+                String line;
+                BufferedReader br=new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                Log.d("debug", "Image upload 23");
+                while ((line=br.readLine()) != null) {
+                    response+=line;
+                }
+                Log.d("debug", "Image upload 24");
+            }
+            else {
+                response="";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Log.d("debug", "Response for upload image "+response);
+        return response;
     }
 
     class CheckData implements Runnable {

@@ -1,5 +1,6 @@
 package in.entrylog.entrylog.main.bluetooth;
 
+import android.annotation.TargetApi;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -16,10 +17,14 @@ import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.design.widget.TextInputLayout;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -49,12 +54,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Scanner;
@@ -77,6 +78,8 @@ import in.entrylog.entrylog.myprinter.WorkService;
 import in.entrylog.entrylog.values.DetailsValue;
 import in.entrylog.entrylog.values.FunctionCalls;
 
+import static android.Manifest.permission.CAMERA;
+
 public class AddVisitor_Bluetooth extends AppCompatActivity {
     public static final String PREFS_NAME = "MyPrefsFile";
     private static final int START_DLG = 5;
@@ -85,6 +88,7 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
     private static final int OTP_DLG = 8;
     private static final int CAMERA_CAPTURE_IMAGE_REQUEST_CODE = 100;
     public static final int MEDIA_TYPE_IMAGE = 1;
+    private static final int RequestPermissionCode = 2;
     // directory name to store captured images and videos
     private static final String IMAGE_DIRECTORY_NAME = "Hello Camera";
 
@@ -102,20 +106,19 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
             Department="", Purpose="", House_number="", Flat_number="", Block="", No_Visitor="", aClass="", Section="",
             Student_Name="", ID_Card="", Visitor_Entry="";
     int codevalue, digits;
-    static String Mobile = "", Visitors_id;
+    static String Mobile = "";
     ConnectingTask task;
     DetailsValue details;
-    ArrayList<String> fieldslist, fieldvalues;
-    Thread mythread, bluetooththread, scanningthread, mobilesuggestthread;
+    Thread bluetooththread, scanningthread, mobilesuggestthread;
     static ProgressDialog dialog = null;
     boolean Visitorsimage = false, connetedsocket = false, textfileready = false, submitpressed = false, devicefound = false,
             scanningstarted = false, connectingdevice = false, devicenamenotfound = false, pairingstarted = false, reprint = false,
             scanningregistered = false, otpcheck = false, manualcheck = false, otpresent = false, mobilesuggestsuccess = false;
-    static boolean qrcodeprinted = false, btconnected = false, completed = false, deviceconnected = false, devicenotconnected = false;
+    static boolean btconnected = false, deviceconnected = false, devicenotconnected = false;
     static BluetoothAdapter mBluetoothAdapter;
     OutputStream mmOutputStream;
     InputStream mmInputStream;
-    static ArrayList<String> arrayListpaired, stafflist, printingorder, printingdisplay;
+    static ArrayList<String> arrayListpaired, stafflist, printingdisplay;
     static ArrayList<BluetoothDevice> arrayListPairedBluetoothDevices;
     BroadcastReceiver mReceiver, mPairing;
     View mProgressBar;
@@ -277,7 +280,7 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                     finish();
                 } else {
                     // capture picture
-                    captureImage();
+                    checkforCameraPermissionMandAbove();
                 }
             }
         });
@@ -621,6 +624,54 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
         } else {
             // no camera on this device
             return false;
+        }
+    }
+
+    @TargetApi(23)
+    public void checkforCameraPermissionMandAbove() {
+        Log.d("debug", "checkForPermissions() called");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkPermission()) {
+                functionCalls.LogStatus("Camera Permissions Granted Successfully");
+                captureImage();
+            } else {
+                requestPermission();
+            }
+        } else {
+            functionCalls.LogStatus("Below M, permissions not via code");
+            captureImage();
+        }
+    }
+
+    @TargetApi(23)
+    private void requestPermission() {
+        ActivityCompat.requestPermissions(AddVisitor_Bluetooth.this, new String[]
+                {
+                        CAMERA
+                }, RequestPermissionCode);
+    }
+
+    @TargetApi(23)
+    private boolean checkPermission() {
+        int FirstPermissionResult = ContextCompat.checkSelfPermission(getApplicationContext(), CAMERA);
+        return FirstPermissionResult == PackageManager.PERMISSION_GRANTED;
+    }
+
+    @TargetApi(23)
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, int[] grantResults) {
+        switch (requestCode) {
+            case RequestPermissionCode:
+                if (grantResults.length > 0) {
+                    boolean CameraPermission = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                    if (CameraPermission) {
+                        functionCalls.LogStatus("Camera Permission Granted");
+                        captureImage();
+                    } else {
+                        functionCalls.LogStatus("Permission Denied");
+                    }
+                }
+                break;
         }
     }
 

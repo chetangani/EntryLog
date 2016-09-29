@@ -2,11 +2,10 @@ package in.entrylog.entrylog.main;
 
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
+import android.graphics.Color;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -27,6 +26,7 @@ public class Overnightstay_Visitors extends AppCompatActivity {
     public static final String PREFS_NAME = "MyPrefsFile";
     public static final int VISITORS_DLG = 1;
     public static final int NOTIFY_DLG = 2;
+    public static final int NOTEXIST_DLG = 3;
 
     RecyclerView OverNightVisitorsView;
     ArrayList<DetailsValue> OverNightVisitorsList;
@@ -34,7 +34,7 @@ public class Overnightstay_Visitors extends AppCompatActivity {
     RecyclerView.LayoutManager layoutManager;
     ConnectingTask task;
     DetailsValue detailsValue;
-    String Organization_ID, ContextView, CheckingUser, Device, PrinterType;
+    String Organization_ID="", ContextView, CheckingUser, Device, PrinterType;
     SharedPreferences settings;
     FunctionCalls functionCalls;
     static ProgressDialog dialog = null;
@@ -72,7 +72,11 @@ public class Overnightstay_Visitors extends AppCompatActivity {
         nightstaythread = new Thread(runnable);
         nightstaythread.start();
 
-        showdialog(NOTIFY_DLG);
+        if (!Organization_ID.equals("")) {
+            showdialog(NOTIFY_DLG);
+        } else {
+            showdialog(NOTEXIST_DLG);
+        }
     }
 
     private void StaggeredRotationChanged() {
@@ -182,6 +186,34 @@ public class Overnightstay_Visitors extends AppCompatActivity {
                 });
                 AlertDialog alert1 = builder.create();
                 alert1.show();
+                break;
+
+            case NOTEXIST_DLG:
+                functionCalls.ringtone(Overnightstay_Visitors.this);
+                AlertDialog.Builder notexist = new AlertDialog.Builder(this);
+                notexist.setTitle("Over Night Stay Visitors");
+                notexist.setMessage("Please login to view Visitors who did not checkout in cut off time");
+                notexist.setCancelable(false);
+                notexist.setPositiveButton("LOGIN", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        Intent intent = new Intent(Overnightstay_Visitors.this, MainActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        startActivity(intent);
+                        finish();
+                    }
+                });
+                notexist.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        finish();
+                    }
+                });
+                AlertDialog alert2 = notexist.create();
+                alert2.show();
+                ((AlertDialog) alert2).getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLUE);
+                ((AlertDialog) alert2).getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.RED);
+                break;
         }
     }
 

@@ -136,24 +136,24 @@ public class BlocksActivity extends AppCompatActivity {
                         addVisitors(AddVisitor_Bluetooth.class);
                     } else if (!settings.getString("Printertype", "").equals("Bluetooth")) {
                         if (settings.getString("Device", "").equals("EL101")) {
-                            /*Toast.makeText(BlocksActivity.this, "EL101", Toast.LENGTH_SHORT).show();
-                            addVisitors(AddVisitors_EL101.class);*/
-                            if (el101_enabled) {
+                            Toast.makeText(BlocksActivity.this, "EL101", Toast.LENGTH_SHORT).show();
+                            addVisitors(AddVisitors_EL101.class);
+                            /*if (el101_enabled) {
                                 Toast.makeText(BlocksActivity.this, "EL101", Toast.LENGTH_SHORT).show();
                                 addVisitors(AddVisitors_EL101.class);
                             } else {
                                 Toast.makeText(BlocksActivity.this, "EL101/102 device will not support for your device..",
                                         Toast.LENGTH_SHORT).show();
-                            }
+                            }*/
                         } else if (settings.getString("Device", "").equals("EL201")) {
-                            /*addVisitors(AddVisitors_EL201.class);*/
-                            if (Build.MANUFACTURER.equals("LS888")) {
+                            addVisitors(AddVisitors_EL201.class);
+                            /*if (Build.MANUFACTURER.equals("LS888")) {
                                 Toast.makeText(BlocksActivity.this, "EL201", Toast.LENGTH_SHORT).show();
                                 addVisitors(AddVisitors_EL201.class);
                             } else {
                                 Toast.makeText(BlocksActivity.this, "EL201 device will not support for your device..",
                                         Toast.LENGTH_SHORT).show();
-                            }
+                            }*/
                         }
                     }
                 } else {
@@ -454,6 +454,7 @@ public class BlocksActivity extends AppCompatActivity {
                         dialog.dismiss();
                         editor.putString("Login", "No");
                         editor.putString("Device", "");
+                        editor.putString("OrganizationID", "");
                         editor.commit();
                         boolean deleted = functionCalls.deletefolder();
                         if (deleted) {

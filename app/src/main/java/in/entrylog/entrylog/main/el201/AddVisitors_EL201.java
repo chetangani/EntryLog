@@ -15,18 +15,15 @@ import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.ExifInterface;
 import android.net.Uri;
-import android.nfc.NdefMessage;
-import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcManager;
-import android.nfc.Tag;
-import android.nfc.tech.Ndef;
-import android.nfc.tech.NdefFormatable;
 import android.os.Build;
 import android.os.Handler;
-import android.os.Parcelable;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.design.widget.TextInputLayout;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -47,19 +44,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.POSD.controllers.PrinterController;
-import com.POSD.util.MachineVersion;
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.MultiFormatWriter;
-import com.google.zxing.WriterException;
-import com.google.zxing.common.BitMatrix;
 import com.squareup.picasso.Picasso;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -67,10 +57,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
 import java.util.Random;
-import java.util.Scanner;
 
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.database.DataBase;
@@ -90,8 +77,11 @@ import in.entrylog.entrylog.values.EL201;
 import in.entrylog.entrylog.values.FunctionCalls;
 import in.entrylog.entrylog.values.SmartCardAdapter;
 
+import static android.Manifest.permission.CAMERA;
+
 public class AddVisitors_EL201 extends AppCompatActivity {
     public static final String PREFS_NAME = "MyPrefsFile";
+    private static final int RequestPermissionCode = 2;
     private static final int NFC_DLG = 4;
     private static final int START_DLG = 5;
     private static final int END_DLG = 6;
@@ -295,7 +285,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                     finish();
                 } else {
                     // capture picture
-                    captureImage();
+                    checkforCameraPermissionMandAbove();
                 }
             }
         });
@@ -575,6 +565,54 @@ public class AddVisitors_EL201 extends AppCompatActivity {
         } else {
             // no camera on this device
             return false;
+        }
+    }
+
+    @TargetApi(23)
+    public void checkforCameraPermissionMandAbove() {
+        Log.d("debug", "checkForPermissions() called");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkPermission()) {
+                functionCalls.LogStatus("Camera Permissions Granted Successfully");
+                captureImage();
+            } else {
+                requestPermission();
+            }
+        } else {
+            functionCalls.LogStatus("Below M, permissions not via code");
+            captureImage();
+        }
+    }
+
+    @TargetApi(23)
+    private void requestPermission() {
+        ActivityCompat.requestPermissions(AddVisitors_EL201.this, new String[]
+                {
+                        CAMERA
+                }, RequestPermissionCode);
+    }
+
+    @TargetApi(23)
+    private boolean checkPermission() {
+        int FirstPermissionResult = ContextCompat.checkSelfPermission(getApplicationContext(), CAMERA);
+        return FirstPermissionResult == PackageManager.PERMISSION_GRANTED;
+    }
+
+    @TargetApi(23)
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, int[] grantResults) {
+        switch (requestCode) {
+            case RequestPermissionCode:
+                if (grantResults.length > 0) {
+                    boolean CameraPermission = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                    if (CameraPermission) {
+                        functionCalls.LogStatus("Camera Permission Granted");
+                        captureImage();
+                    } else {
+                        functionCalls.LogStatus("Permission Denied");
+                    }
+                }
+                break;
         }
     }
 

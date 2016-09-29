@@ -104,15 +104,40 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
         super.onNewIntent(intent);
         if (intent.hasExtra(NfcAdapter.EXTRA_TAG)) {
             Toast.makeText(CheckoutVisitors.this, "Smart Card Intent", Toast.LENGTH_SHORT).show();
-            /*Parcelable[] parcelables = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+            Parcelable[] parcelables = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
             if (parcelables != null && parcelables.length > 0) {
                 readTextFromMessage((NdefMessage) parcelables[0]);
             } else {
                 Toast.makeText(CheckoutVisitors.this, "No Ndef Message Found", Toast.LENGTH_SHORT).show();
-            }*/
-            SmartCardAdapter smartCardAdapter = new SmartCardAdapter();
-            smartCardAdapter.readSmartTag(CheckoutVisitors.this, intent);
+            }
+            /*SmartCardAdapter smartCardAdapter = new SmartCardAdapter();
+            smartCardAdapter.readSmartTag(CheckoutVisitors.this, intent);*/
         }
+    }
+
+    private void readTextFromMessage(NdefMessage ndefMessage) {
+        NdefRecord[] ndefRecords = ndefMessage.getRecords();
+        if (ndefRecords != null && ndefRecords.length > 0) {
+            NdefRecord ndefRecord = ndefRecords[0];
+            String tagcontent = getTextfromNdefRecord(ndefRecord);
+            /*showdialog(tagcontent);*/
+            checkingout(tagcontent);
+        } else {
+            Toast.makeText(CheckoutVisitors.this, "No Ndef Records Found", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public String getTextfromNdefRecord(NdefRecord ndefRecord) {
+        String tagContent = null;
+        try {
+            byte[] payload = ndefRecord.getPayload();
+            String textEncoding = ((payload[0] & 128) == 0) ? "UTF-8" : "UTF-16";
+            int languageSize = payload[0] & 0063;
+            tagContent = new String(payload, languageSize + 1, payload.length - languageSize - 1, textEncoding);
+        } catch (UnsupportedEncodingException e) {
+
+        }
+        return tagContent;
     }
 
     class DisplayTimer implements Runnable {
