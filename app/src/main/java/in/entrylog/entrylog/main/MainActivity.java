@@ -1,6 +1,5 @@
 package in.entrylog.entrylog.main;
 
-import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -14,7 +13,6 @@ import android.devkit.api.Misc;
 import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -29,12 +27,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
 
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
@@ -127,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                checkforPermissionsMandAbove();
+                checkPermissionsMandAbove();
             }
         }, 5000);
 
@@ -400,7 +392,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @TargetApi(23)
-    public void checkforPermissionsMandAbove() {
+    public void checkPermissionsMandAbove() {
         Log.d("debug", "checkForPermissions() called");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (checkPermission()) {

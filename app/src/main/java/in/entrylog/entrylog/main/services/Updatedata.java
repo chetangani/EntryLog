@@ -324,12 +324,13 @@ public class Updatedata extends Service {
         }
         int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
         if (orientation == 1) {
-            if (Device.equals("EL201")) {
+            /*if (Device.equals("EL201")) {
                 matrix.postRotate(270);
                 bmp = Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, true);
             } else {
                 bmp = src;
-            }
+            }*/
+            bmp = src;
         } else if (orientation == 3) {
             matrix.postRotate(180);
             bmp = Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, true);

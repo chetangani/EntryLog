@@ -731,9 +731,9 @@ public class AddVisitors_EL201 extends AppCompatActivity {
         int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
         Log.d("debug", ""+orientation);
         if (orientation == 1) {
-            /*bmp = src;*/
-            matrix.postRotate(270);
-            bmp = Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, true);
+            bmp = src;
+            /*matrix.postRotate(270);
+            bmp = Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, true);*/
         } else if (orientation == 3) {
             matrix.postRotate(180);
             bmp = Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, true);
