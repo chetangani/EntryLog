@@ -82,7 +82,7 @@ public class SendingData {
                                   String ImagefileName, String Organization_ID, String Security_ID, String Barcode,
                                   String visitor_Designation, String department, String purpose, String house_number,
                                   String flat_number, String block, String no_Visitor, String aClass, String section,
-                                  String student_Name, String ID_Card, String Visitor_Entry, String Current_Time) {
+                                  String student_Name, String ID_Card, String Visitor_Entry, String Current_Time, String ID_Card_Type) {
         String response = "";
         HashMap<String, String> datamap = new HashMap<>();
         datamap.put("visitors_name", Name);
@@ -108,6 +108,7 @@ public class SendingData {
         datamap.put("id_card_number", ID_Card);
         datamap.put("verification_status_id", Visitor_Entry);
         datamap.put("checked_in_time", Current_Time);
+        datamap.put("id_card_type", ID_Card_Type);
         try {
             response = UrlPostConnection("Check_in_visitors", datamap);
         } catch (IOException e) {

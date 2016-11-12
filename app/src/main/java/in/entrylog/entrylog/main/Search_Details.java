@@ -118,7 +118,7 @@ public class Search_Details extends AppCompatActivity {
         if (ContextView.equals("Visitors")) {
             SearchVisitors searchvisitors = task.new SearchVisitors(SearchVisitorsList, SearchVisitorsadapter, detailsValue,
                     Organization_ID, convertdate(CheckinDate), convertdate(CheckoutDate), SearchName, SearchMobile,
-                    SearchEmail, SearchTomeet, Search_Details.this, SearchVehicle, "2");
+                    SearchEmail, SearchTomeet, Search_Details.this, SearchVehicle, "");
             searchvisitors.execute();
             dialog = ProgressDialog.show(Search_Details.this, "", "Searching for a visitors..", true);
             visitorsthread = null;

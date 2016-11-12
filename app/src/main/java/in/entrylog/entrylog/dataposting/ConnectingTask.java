@@ -196,14 +196,14 @@ public class ConnectingTask {
         String Visitors_Name, Visitors_Email, Visitors_Mobile, Visitors_FromAddress, Visitors_ToMeet, BarCode,
                 Visitors_VehicleNo, Visitors_ImageFileName, Security_ID, Organization_ID, Visitor_Designation, Department,
                 Purpose, House_number, Flat_number, Block, No_Visitor, aClass, Section, Student_Name, ID_Card, Visitor_Entry,
-                result = "", Current_Time;
+                result = "", Current_Time, ID_Card_Type;
 
         public VisitorsCheckIn(DetailsValue details, String visitors_Name, String visitors_Email, String visitors_Mobile,
                                String visitors_FromAddress, String visitors_ToMeet, String barCode, String visitors_VehicleNo,
                                String visitors_ImageFileName, String security_ID, String organization_ID,
                                String visitor_Designation, String department, String purpose, String house_number,
                                String flat_number, String block, String no_Visitor, String aclass, String section,
-                               String student_Name, String ID_Card, String visitor_entry, String current_Time) {
+                               String student_Name, String ID_Card, String visitor_entry, String current_Time, String id_card_type) {
             this.details = details;
             Visitors_Name = visitors_Name;
             Visitors_Email = visitors_Email;
@@ -228,6 +228,7 @@ public class ConnectingTask {
             this.ID_Card = ID_Card;
             Visitor_Entry = visitor_entry;
             Current_Time = current_Time;
+            ID_Card_Type = id_card_type;
         }
 
         @Override
@@ -238,10 +239,10 @@ public class ConnectingTask {
         @Override
         protected String doInBackground(String... params) {
             try {
-                result = sendingData.VisitorsCheckIn(Visitors_Name, Visitors_Email, Visitors_Mobile,
-                        Visitors_FromAddress, Visitors_ToMeet, Visitors_VehicleNo, Visitors_ImageFileName,
-                        Organization_ID, Security_ID, BarCode, Visitor_Designation, Department, Purpose, House_number,
-                        Flat_number, Block, No_Visitor, aClass, Section, Student_Name, ID_Card, Visitor_Entry, Current_Time);
+                result = sendingData.VisitorsCheckIn(Visitors_Name, Visitors_Email, Visitors_Mobile, Visitors_FromAddress,
+                        Visitors_ToMeet, Visitors_VehicleNo, Visitors_ImageFileName, Organization_ID, Security_ID, BarCode,
+                        Visitor_Designation, Department, Purpose, House_number, Flat_number, Block, No_Visitor, aClass,
+                        Section, Student_Name, ID_Card, Visitor_Entry, Current_Time, ID_Card_Type);
             } catch (NullPointerException e) {
                 e.printStackTrace();
             } catch (Exception e) {

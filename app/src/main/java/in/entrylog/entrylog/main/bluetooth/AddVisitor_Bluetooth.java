@@ -104,7 +104,7 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
     String Name, Email="", FromAddress, ToMeet, Vehicleno = "", Organizationid, OrganizationName, UpdateVisitorImage="",
             Visitors_ImagefileName = "", GuardID, User, DataPath, DateTime="", BarCodeValue="", format, Visitor_Designation="",
             Department="", Purpose="", House_number="", Flat_number="", Block="", No_Visitor="", aClass="", Section="",
-            Student_Name="", ID_Card="", Visitor_Entry="";
+            Student_Name="", ID_Card="", Visitor_Entry="", ID_Card_type="";
     int codevalue, digits;
     static String Mobile = "";
     ConnectingTask task;
@@ -131,9 +131,9 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
     StaffService staffService;
     PrintingService printingService;
     TextInputLayout Til_field1, Til_field2, Til_field3, Til_field4, Til_field5, Til_field6, Til_field7, Til_field8,
-            Til_field9, Til_field10, Til_field11, emailLayout;
+            Til_field9, Til_field10, Til_field11, Til_field12, emailLayout;
     EditText Et_field1, Et_field2, Et_field3, Et_field4, Et_field5, Et_field6, Et_field7, Et_field8, Et_field9,
-            Et_field10, Et_field11;
+            Et_field10, Et_field11, Et_field12;
     ArrayAdapter<String> Staffadapter;
     int otpcount = 0;
 
@@ -188,6 +188,7 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
         Til_field9 = (TextInputLayout) findViewById(R.id.field9_Til);
         Til_field10 = (TextInputLayout) findViewById(R.id.field10_Til);
         Til_field11 = (TextInputLayout) findViewById(R.id.field11_Til);
+        Til_field12 = (TextInputLayout) findViewById(R.id.field12_Til);
 
         Et_field1 = (EditText) findViewById(R.id.field1_EtTxt);
         Et_field2 = (EditText) findViewById(R.id.field2_EtTxt);
@@ -200,6 +201,7 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
         Et_field9 = (EditText) findViewById(R.id.field9_EtTxt);
         Et_field10 = (EditText) findViewById(R.id.field10_EtTxt);
         Et_field11 = (EditText) findViewById(R.id.field11_EtTxt);
+        Et_field12 = (EditText) findViewById(R.id.field12_EtTxt);
 
         addvisitorslayout = (LinearLayout) findViewById(R.id.addvisitors_layout);
 
@@ -352,13 +354,13 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                                             Visitors_ImagefileName, fileUri.getPath(), BarCodeValue, Organizationid, GuardID,
                                             UpdateVisitorImage, Visitor_Designation, Department, Purpose, House_number,
                                             Flat_number, Block, No_Visitor, aClass, Section, Student_Name, ID_Card,
-                                            settings.getString("Device", ""), Visitor_Entry, DateTime);
+                                            settings.getString("Device", ""), Visitor_Entry, DateTime, ID_Card_type);
                                 } else {
                                     dataBase.insertentrylogdata(Name, Email, Mobile, FromAddress, ToMeet, Vehicleno,
                                             Visitors_ImagefileName, "", BarCodeValue, Organizationid, GuardID,
                                             UpdateVisitorImage, Visitor_Designation, Department, Purpose, House_number,
                                             Flat_number, Block, No_Visitor, aClass, Section, Student_Name, ID_Card,
-                                            settings.getString("Device", ""), Visitor_Entry, DateTime);
+                                            settings.getString("Device", ""), Visitor_Entry, DateTime, ID_Card_type);
                                 }
                                 if (!settings.getString("UpdateData", "").equals("Running")) {
                                     Log.d("debug", "Service Started");
@@ -1386,6 +1388,7 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
         Et_field9.setText(details.getSection());
         Et_field10.setText(details.getStudent_Name());
         Et_field11.setText(details.getID_Card());
+        Et_field12.setText(details.getID_Card_Type());
         UpdateVisitorImage = "No";
         Visitorsimage = true;
     }
@@ -1449,6 +1452,10 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                     Til_field11.setVisibility(View.VISIBLE);
                     Til_field11.setHint(value);
                 }
+                if (value.equals("ID Card Type")) {
+                    Til_field12.setVisibility(View.VISIBLE);
+                    Til_field12.setHint(value);
+                }
             }
         } else {
             LogStatus("No Fields Available");
@@ -1507,6 +1514,9 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
         }
         if (Til_field11.getVisibility() == View.VISIBLE) {
             ID_Card = Et_field11.getText().toString();
+        }
+        if (Til_field12.getVisibility() == View.VISIBLE) {
+            ID_Card_type = Et_field12.getText().toString();
         }
     }
 

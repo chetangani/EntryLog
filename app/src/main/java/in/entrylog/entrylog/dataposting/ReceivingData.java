@@ -349,6 +349,7 @@ public class ReceivingData {
                     details.setSection(jo.getString("section"));
                     details.setStudent_Name(jo.getString("student_name"));
                     details.setID_Card(jo.getString("id_card_number"));
+                    details.setID_Card_Type(jo.getString("id_card_type"));
                 } else if (Status.equals("Failure")){
                     details.setMobileAutoSuggestFailure(true);
                 } else {
@@ -484,11 +485,6 @@ public class ReceivingData {
                             orderlist.add(jo.getString("visitors_vehicle_number_order"));
                             displaylist.add(jo.getString("visitors_vehicle_number_order")+"_Vehicle Number");
                         }
-                        /*String visitors_photo = jo.getString("visitors_photo");
-                        if (!visitors_photo.equals("")) {
-                            orderlist.add(jo.getString("visitors_photo_order"));
-                            displaylist.add("Photo");
-                        }*/
                         String visitors_designation = jo.getString("visitors_designation");
                         if (!visitors_designation.equals("")) {
                             orderlist.add(jo.getString("visitors_designation_order"));

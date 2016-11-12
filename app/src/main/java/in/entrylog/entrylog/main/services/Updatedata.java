@@ -54,7 +54,7 @@ public class Updatedata extends Service {
     DataBase dataBase;
     String Name, Email="", FromAddress, ToMeet, Vehicleno="", Visitors_ImagefileName, Organizationid, GuardID, ImagePath,
             UploadImage, UpdatedID="", BarCodeValue, Visitor_Designation, Department, Purpose, House_number, Flat_number,
-            Block, No_Visitor, aClass, Section, Student_Name, ID_Card, Visitor_Entry, Current_Time;
+            Block, No_Visitor, aClass, Section, Student_Name, ID_Card, Visitor_Entry, Current_Time, ID_Card_Type;
     static String Mobile, Visitors_id, Device;
     ArrayList<DetailsValue> arrayList;
     static boolean completed = false;
@@ -402,10 +402,12 @@ public class Updatedata extends Service {
             LogStatus("Service Visitor_Entry: "+Visitor_Entry);
             Current_Time = data.getString(data.getColumnIndex("current_time"));
             LogStatus("Service Current_Time: "+Current_Time);
+            ID_Card_Type = data.getString(data.getColumnIndex("id_card_type"));
+            LogStatus("Service ID_Card_Type: "+ID_Card_Type);
             VisitorsCheckIn checkin = task.new VisitorsCheckIn(details, Name, Email, Mobile,
                     FromAddress, ToMeet, Vehicleno, Visitors_ImagefileName, Organizationid, GuardID, BarCodeValue,
                     Visitor_Designation, Department, Purpose, House_number, Flat_number, Block, No_Visitor, aClass,
-                    Section, Student_Name, ID_Card, Visitor_Entry, Current_Time);
+                    Section, Student_Name, ID_Card, Visitor_Entry, Current_Time, ID_Card_Type);
             checkin.execute();
         }
     }
@@ -466,10 +468,12 @@ public class Updatedata extends Service {
                 LogStatus("Database Visitor_Entry: "+Visitor_Entry);
                 String Current_Time = data.getString(data.getColumnIndex("current_time"));
                 LogStatus("Database Current_Time: "+Current_Time);
+                String ID_Card_Type = data.getString(data.getColumnIndex("id_card_type"));
+                LogStatus("Database ID_Card_Type: "+ID_Card_Type);
                 dataBase.insertcheckin(Name, Email, Mobile, FromAddress, ToMeet, Vehicleno, Visitors_ImagefileName,
                         ImagePath, BarCode, Organizationid, GuardID, UploadImage, Visitor_Designation, Department, Purpose,
                         House_number, Flat_number, Block, No_Visitor, Aclass, Section, Student_Name, ID_Card, Device, Visitor_Entry,
-                        Current_Time);
+                        Current_Time, ID_Card_Type);
             }
             Cursor delete = dataBase.deleteentrylogdata();
             delete.moveToNext();
@@ -485,6 +489,7 @@ public class Updatedata extends Service {
     @Override
     public void onDestroy() {
         Servicerunning = false;
+        dataBase.db_delete();
         editor.putString("UpdateData", "Destroyed");
         editor.commit();
     }

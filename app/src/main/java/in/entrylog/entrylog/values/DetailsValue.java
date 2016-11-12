@@ -19,7 +19,7 @@ public class DetailsValue {
             Visitors_CheckInTime, Visitors_CheckInBy, Visitor_ID, Visitors_CheckOutTime, Visitors_BarCode, Check_in_User,
             Check_out_User, Visitor_Designation, Department, Purpose, House_number, Flat_number, Block, No_Visitor, aClass, Section,
             Student_Name, ID_Card, OTPAccess, ImageAccess, Printertype, Scannertype, RfidStatus, DeviceModel, Cameratype, Apkfile,
-            ApkdownloadUrl, ServerTime;
+            ApkdownloadUrl, ServerTime, ID_Card_Type;
     BluetoothSocket Socket;
     BluetoothDevice device;
     static ArrayList<String> arrayFields;
@@ -626,5 +626,13 @@ public class DetailsValue {
 
     public void setServerTime(String serverTime) {
         ServerTime = serverTime;
+    }
+
+    public String getID_Card_Type() {
+        return ID_Card_Type;
+    }
+
+    public void setID_Card_Type(String ID_Card_Type) {
+        this.ID_Card_Type = ID_Card_Type;
     }
 }

@@ -25,6 +25,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedInputStream;
@@ -59,12 +60,12 @@ public class BlocksActivity extends AppCompatActivity {
     public static final int DIALOG_DOWNLOAD_PROGRESS = 0;
     private ProgressDialog mProgressDialog;
     Button AddVisitors_btn, Checkout_btn, Visitors_btn, ManualCheckout_btn;
+    TextView tv_app_version;
     String OrganizationID, OrganizationName, GuardID, User, UpdateApkURL="", Apkfile="", Serverapkversion="", Appversion="",
             OverNightTime="";
     SerialPrinter printer;
     SharedPreferences settings;
     SharedPreferences.Editor editor;
-    Context context;
     ConnectingTask task;
     Thread logoutthread, updatethread;
     DetailsValue detailsValue;
@@ -103,6 +104,7 @@ public class BlocksActivity extends AppCompatActivity {
         Visitors_btn = (Button) findViewById(R.id.visitors_btn);
         Checkout_btn = (Button) findViewById(R.id.checkout_btn);
         ManualCheckout_btn = (Button) findViewById(R.id.manually_checkout_btn);
+        tv_app_version = (TextView) findViewById(R.id.app_version);
 
         el101_enabled = el101_102device.EnablePrinter(true);
 
@@ -122,6 +124,28 @@ public class BlocksActivity extends AppCompatActivity {
                 }
             }
         }, 5000);
+
+        PackageInfo pInfo = null;
+        try {
+            pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        String version = pInfo.versionName;
+        tv_app_version.setText("VER: "+version);
+
+        tv_app_version.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_MAIN);
+                intent.addCategory(Intent.CATEGORY_HOME);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+            }
+        });
 
         AddVisitors_btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -367,16 +391,29 @@ public class BlocksActivity extends AppCompatActivity {
                 AlertDialog.Builder appupdate = new AlertDialog.Builder(this);
                 appupdate.setTitle("App Updates");
                 if (updatefound) {
-                    appupdate.setMessage(Serverapkversion +" version of Entrylog.in Application is available to Update..");
+                    appupdate.setMessage("Your current version number : "+Appversion+
+                            "\n"+"\n"+
+                            "New version is available : "+Serverapkversion+"\n");
                     appupdate.setPositiveButton("UPDATE", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            DownloadLatestApk downloadLatestApk = new DownloadLatestApk();
-                            downloadLatestApk.execute();
+                            File apkFile = new File(functionCalls.checkapkfilepath(Apkfile));
+                            if (apkFile.exists()) {
+                                updatethread.interrupt();
+                                try {
+                                    functionCalls.LogStatus("Apk file exist so don't need to download apk..");
+                                    UpdateApp(apkFile);
+                                } catch (ActivityNotFoundException e) {
+                                }
+                            } else {
+                                DownloadLatestApk downloadLatestApk = new DownloadLatestApk();
+                                downloadLatestApk.execute();
+                                functionCalls.LogStatus("Apk file doesn't exists downloading necessary");
+                            }
                         }
                     });
                 } else {
-                    appupdate.setMessage("Version "+Appversion+" is up to date..");
+                    appupdate.setMessage("Your current version number : "+Appversion+" is up to date..");
                     appupdate.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -514,19 +551,16 @@ public class BlocksActivity extends AppCompatActivity {
                         Appversion = pInfo.versionName;
                         Apkfile = detailsValue.getApkfile();
                         UpdateApkURL = detailsValue.getApkdownloadUrl();
-                        Serverapkversion = Apkfile.substring(Apkfile.length()-9, Apkfile.length()-4);
-                        File apkFile = new File(functionCalls.checkapkfilepath(Apkfile));
-                        if (apkFile.exists()) {
-                            updatethread.interrupt();
-                            try {
-                                functionCalls.LogStatus("Apk file exist so don't need to download apk..");
-                                UpdateApp(apkFile);
-                            } catch (ActivityNotFoundException e) {
+                        if (Apkfile.length() > 21) {
+                            if (Apkfile.length() == 22) {
+                                Serverapkversion = Apkfile.substring(Apkfile.length()-10, Apkfile.length()-4);
+                            } else if (Apkfile.length() == 23) {
+                                Serverapkversion = Apkfile.substring(Apkfile.length()-11, Apkfile.length()-4);
                             }
                         } else {
-                            compare(Appversion, Serverapkversion);
-                            functionCalls.LogStatus("Apk file doesn't exists downloading necessary");
+                            Serverapkversion = Apkfile.substring(Apkfile.length()-9, Apkfile.length()-4);
                         }
+                        compare(Appversion, Serverapkversion);
                     }
                     if (appdownloaded) {
                         appdownloaded = false;
@@ -550,7 +584,7 @@ public class BlocksActivity extends AppCompatActivity {
         Uri path = Uri.fromFile(Apkfile);
         Intent objIntent = new Intent(Intent.ACTION_VIEW);
         objIntent.setDataAndType(path, "application/vnd.android.package-archive");
-        objIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        objIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(objIntent);
     }
 

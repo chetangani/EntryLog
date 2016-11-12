@@ -147,12 +147,12 @@ public class FunctionCalls {
         try {
             final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd H:mm:ss");
             final Date dateObj = sdf.parse(date);
-            result = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss a").format(dateObj);
+            result = new SimpleDateFormat("dd-MM-yyyy H:mm:ss").format(dateObj);//hh:mm:ss a
         } catch (final ParseException e) {
             e.printStackTrace();
         }
         Log.d("debug", "Time Result: "+result);
-        if (result.length() > 22) {
+        /*if (result.length() > 22) {
             String d1 = result.substring(result.length()-4, result.length());
             String d2 = result.substring(0, result.length()-4);
             String d3 = "";
@@ -162,7 +162,7 @@ public class FunctionCalls {
                 d3 = "AM";
             }
             result = d2 + d3;
-        }
+        }*/
         return result;
     }
 
